@@ -64,7 +64,7 @@ step {
 
 These Step functions can then be discovered on the classpath via the `StepFunctions` helper methods as it finds all of the generated `io/jenkins/functions/steps.properties` files on the classpath to then be able to find all the step classes.
 
-## Invoking a function from the classpath
+## Invoking a step function from the classpath
 
 ```java
 Map<String, StepFunction> functions = StepFunctions.loadStepFunctions(getClass().getClassLoader());
