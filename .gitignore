@@ -1,0 +1,17 @@
+target
+.idea
+.vscode
+*.iml
+*.im
+*.ipr
+*.iws
+overlays
+.DS_Store
+.settings
+*.swp
+*.log
+.project
+.classpath
+.cache
+dependency-reduced-pom.xml
+.vagrant/
