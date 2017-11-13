@@ -16,6 +16,8 @@
 package io.jenkins.functions.loader;
 
 import io.jenkins.functions.Step;
+import io.jenkins.functions.loader.support.CallableStepFunction;
+import io.jenkins.functions.loader.support.ContextStepFunction;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -34,7 +36,8 @@ import static io.jenkins.functions.loader.helpers.Strings.notEmpty;
 public class StepFunctions {
 
     private static final String STEP_PROPERTIES = "io/jenkins/functions/steps.properties";
-    private static final String INVOKE_METHOD = "call";
+    private static final String CALL_METHOD = "call";
+    private static final String APPLY_METHOD = "apply";
 
     public static Map<String, StepFunction> loadStepFunctions(ClassLoader classloader) throws IOException, ClassNotFoundException {
         Map<String, StepFunction> answer = new HashMap<>();
@@ -47,7 +50,7 @@ public class StepFunctions {
                 }
             }
         }
-        
+
         return answer;
     }
 
@@ -68,23 +71,46 @@ public class StepFunctions {
     }
 
     private static StepFunction createStepFunction(String name, Class<?> clazz, ClassLoader classLoader) {
-        Method method;
-        try {
-            method = clazz.getMethod(INVOKE_METHOD);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("Step function class " + clazz.getName() + " does not have a method "
-                    + INVOKE_METHOD + " in " + classLoader);
-        }
-
         String description = null;
         Step step = clazz.getAnnotation(Step.class);
         if (step != null) {
             description = step.description();
         }
-        Class<?> returnType = method.getReturnType();
+
         // TODO load argument metadata!
         ArgumentMetadata[] argumentMetadatas = {};
-        StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
-        return new StepFunctionImpl(name, clazz, method, metadata);
+
+        Method method;
+        try {
+            method = clazz.getMethod(CALL_METHOD);
+            Class<?> returnType = method.getReturnType();
+            StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
+            return new CallableStepFunction(name, clazz, metadata, method);
+        } catch (NoSuchMethodException e) {
+            method = findApplyMethod(clazz);
+            if (method == null) {
+                throw new IllegalArgumentException("Step function class " + clazz.getName() + " does not have a method "
+                        + CALL_METHOD + " or " + APPLY_METHOD + " in " + classLoader);
+            } else {
+                Class<?> returnType = method.getReturnType();
+                StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
+                return new ContextStepFunction(name, clazz, metadata, method);
+            }
+        }
+
+    }
+
+    private static Method findApplyMethod(Class<?> clazz) {
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getName().equals(APPLY_METHOD) && method.getParameterCount() == 1) {
+                return method;
+            }
+        }
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null && !superclass.equals(clazz)) {
+            return findApplyMethod(superclass);
+        }
+        return null;
     }
 }

@@ -26,7 +26,8 @@ public class ArgumentMetadata {
     public String toString() {
         return "PFuncParameterInfo{" + type + "}";
     }
-    /** 
+
+    /**
      * Returns the method prototype text 
      */
     public String getPrototype() {
@@ -42,6 +43,7 @@ public class ArgumentMetadata {
         }
         return builder.toString();
     }
+
     public Class<?> getType() {
         return type;
     }

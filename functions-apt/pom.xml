@@ -38,7 +38,7 @@
       <groupId>io.jenkins.functions</groupId>
       <artifactId>functions-api</artifactId>
     </dependency>
-    
+
     <!-- testing -->
     <dependency>
       <groupId>org.assertj</groupId>

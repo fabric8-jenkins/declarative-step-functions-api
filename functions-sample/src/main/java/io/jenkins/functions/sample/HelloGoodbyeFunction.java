@@ -24,7 +24,7 @@ import io.jenkins.functions.Step;
 public class HelloGoodbyeFunction extends HelloFunction {
     @Argument
     private String bye;
-    
+
     private String dummyRegularField;
 
     public HelloGoodbyeFunction() {

@@ -40,17 +40,17 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-  
-<!--
-  <organization>
-    <name>Original Authors</name>
-  </organization>
--->
+
+  <!--
+    <organization>
+      <name>Original Authors</name>
+    </organization>
+  -->
 
   <prerequisites>
     <maven>3.2.1</maven>
   </prerequisites>
-  
+
   <scm>
     <connection>scm:git:git@github.com:fabric8io/fabric8-pipeline-step-functions.git</connection>
     <developerConnection>scm:git:git@github.com:fabric8io/fabric8-pipeline-step-functions.git</developerConnection>
@@ -358,6 +358,7 @@
     <profile>
       <id>license</id>
       <build>
+        <defaultGoal>license:format</defaultGoal>
         <plugins>
           <plugin>
             <groupId>com.mycila</groupId>

@@ -18,7 +18,6 @@ package io.jenkins.functions.loader;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +39,7 @@ public class StepFunctionsTest {
         assertThat(metadata.getReturnType()).isNotNull();
         ArgumentMetadata[] parameterInfos = metadata.getArgumentsMetadata();
         assertThat(parameterInfos).isNotNull();
-        
+
         // TODO
         //assertThat(parameterInfos).isNotEmpty();
     }

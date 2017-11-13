@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader;
+package io.jenkins.functions.loader.support;
 
-import org.apache.commons.beanutils.PropertyUtils;
+import io.jenkins.functions.loader.StepFunction;
+import io.jenkins.functions.loader.StepMetadata;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Set;
 
 /**
  */
-public class StepFunctionImpl implements StepFunction {
+public abstract class StepFunctionSupport implements StepFunction {
     private final String name;
     private final Class<?> clazz;
-    private final Method method;
     private final StepMetadata metadata;
 
-    public StepFunctionImpl(String name, Class<?> clazz, Method method, StepMetadata metadata) {
+    public StepFunctionSupport(String name, Class<?> clazz, StepMetadata metadata) {
         this.name = name;
         this.clazz = clazz;
-        this.method = method;
         this.metadata = metadata;
     }
 
@@ -48,27 +44,10 @@ public class StepFunctionImpl implements StepFunction {
             throw new IllegalArgumentException("Could not instantiate class " + clazz.getName() + " due to: " + e, e);
         }
 
-        if (arguments != null) {
-            Set<Map.Entry<String, Object>> entries = arguments.entrySet();
-            for (Map.Entry<String, Object> entry : entries) {
-                String name = entry.getKey();
-                Object value = entry.getValue();
-                try {
-                    PropertyUtils.setProperty(object, name, value);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("Could not set property " + name + " on bean " + object + " to value " + value + " due to: " + e, e);
-                }
-            }
-        }
-
-        try {
-            return method.invoke(object);
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
-        }
+        return invokeOnInstance(arguments, object);
     }
+
+    protected abstract Object invokeOnInstance(Map<String, Object> arguments, Object object);
 
     @Override
     public StepMetadata getMetadata() {
