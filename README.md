@@ -25,6 +25,57 @@ public class HelloFunction implements Callable<String> {
 }
 ```
 
+Or you can implement a `Function`
+ ```java
+@Step(name = "example")
+public class ExampleFunction implements Function<ExampleFunction.Context, Result> {
+
+    @Inject
+    Logger logger;
+
+    @Override
+    public Result apply(Context context) {
+        Result result;
+        if (logger == null) {
+            logger = DefaultLogger.getInstance();
+        }
+        if (context.message == null) {
+            logger.err().println("<message> not provided");
+            result = Result.FAILURE;
+        } else {
+            logger.out().println(String.format("Hello, %s", context.message));
+            result = Result.SUCCESS;
+        }
+        return result;
+    }
+
+    public static class Context {
+        @Argument
+        private String message;
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
+}
+```
+
+Or you can just annotation a class with `@Step` and then annotate each method with `@Step` and each parameter with `@Argument`
+
+```java
+@Step
+public class Functions {
+    @Step
+    public String cheese(@Argument(name = "name") String name, @Argument(name = "amount") int amount) {
+        return "Hello " + name + " #" + amount;
+    }
+}
+```
+
 The `@Argument` annotation is then used to export any arguments for the step.
 
 Then if you add the `functions-apt` module to your `pom.xml` via:

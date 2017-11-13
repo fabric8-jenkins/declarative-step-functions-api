@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,8 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Implements a set function using a {@link Function} method
+ * Implements a step function using a {@link Function} object which takes a context argument containing the arguments
+ * or a Map
  */
 public class ContextStepFunction extends StepFunctionSupport {
     private final Method method;
@@ -38,12 +39,11 @@ public class ContextStepFunction extends StepFunctionSupport {
     }
 
     protected Object invokeOnInstance(Map<String, Object> arguments, Object object) {
-        Object contextObject = null;
+        Object context = null;
         if (Map.class.isAssignableFrom(contextType)) {
-            contextObject = arguments;
+            context = arguments;
         } else {
             // lets try instantiate the context object and inject the parameters
-            Object context = null;
             try {
                 context = contextType.newInstance();
             } catch (Exception e) {
@@ -62,7 +62,7 @@ public class ContextStepFunction extends StepFunctionSupport {
                 }
             }
         }
-        Object[] args = {contextObject};
+        Object[] args = {context};
         try {
             return method.invoke(object, args);
         } catch (IllegalAccessException e) {

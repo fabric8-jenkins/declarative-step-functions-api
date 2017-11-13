@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,12 +19,13 @@ import io.jenkins.functions.Argument;
 import io.jenkins.functions.Logger;
 import io.jenkins.functions.Result;
 import io.jenkins.functions.Step;
+import io.jenkins.functions.support.DefaultLogger;
 
 import javax.inject.Inject;
 import java.util.function.Function;
 
-@Step
-public class FunctionExample implements Function<FunctionExample.Context, Result> {
+@Step(name = "example")
+public class ExampleFunction implements Function<ExampleFunction.Context, Result> {
 
     @Inject
     Logger logger;
@@ -32,6 +33,9 @@ public class FunctionExample implements Function<FunctionExample.Context, Result
     @Override
     public Result apply(Context context) {
         Result result;
+        if (logger == null) {
+            logger = DefaultLogger.getInstance();
+        }
         if (context.message == null) {
             logger.err().println("<message> not provided");
             result = Result.FAILURE;
@@ -43,11 +47,14 @@ public class FunctionExample implements Function<FunctionExample.Context, Result
     }
 
     public static class Context {
-
         @Argument
-        public final String message;
+        private String message;
 
-        public Context(String message) {
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
             this.message = message;
         }
     }

@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,11 +16,14 @@
 package io.jenkins.functions.loader;
 
 import io.jenkins.functions.Step;
+import io.jenkins.functions.loader.helpers.Strings;
 import io.jenkins.functions.loader.support.CallableStepFunction;
 import io.jenkins.functions.loader.support.ContextStepFunction;
+import io.jenkins.functions.loader.support.MethodStepFunction;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -64,13 +67,12 @@ public class StepFunctions {
             String className = entry.getValue().toString();
             if (notEmpty(name) && notEmpty(className)) {
                 Class<?> clazz = classLoader.loadClass(className);
-                map.put(name, createStepFunction(name, clazz, classLoader));
+                loadStepFunctionsForClass(name, clazz, classLoader, map);
             }
         }
-
     }
 
-    private static StepFunction createStepFunction(String name, Class<?> clazz, ClassLoader classLoader) {
+    private static void loadStepFunctionsForClass(String name, Class<?> clazz, ClassLoader classLoader, Map<String, StepFunction> map) {
         String description = null;
         Step step = clazz.getAnnotation(Step.class);
         if (step != null) {
@@ -85,19 +87,49 @@ public class StepFunctions {
             method = clazz.getMethod(CALL_METHOD);
             Class<?> returnType = method.getReturnType();
             StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
-            return new CallableStepFunction(name, clazz, metadata, method);
+            map.put(name, new CallableStepFunction(name, clazz, metadata, method));
         } catch (NoSuchMethodException e) {
             method = findApplyMethod(clazz);
             if (method == null) {
-                throw new IllegalArgumentException("Step function class " + clazz.getName() + " does not have a method "
-                        + CALL_METHOD + " or " + APPLY_METHOD + " in " + classLoader);
+                Map<String, Method> stepMethods = new HashMap<>();
+                loadStepMethods(clazz, stepMethods);
+                if (stepMethods.isEmpty()) {
+                    throw new IllegalArgumentException("Step function class " + clazz.getName() + " does not have a method "
+                            + CALL_METHOD + " or " + APPLY_METHOD + " nor has any methods annotated with @Step in " + classLoader);
+                } else {
+                    Set<Map.Entry<String, Method>> entries = stepMethods.entrySet();
+                    for (Map.Entry<String, Method> entry : entries) {
+                        String methodName = entry.getKey();
+                        method = entry.getValue();
+                        Class<?> returnType = method.getReturnType();
+                        StepMetadata metadata = new StepMetadata(methodName, description, returnType, argumentMetadatas);
+                        map.put(methodName, new MethodStepFunction(name, clazz, metadata, method));
+                    }
+                }
             } else {
                 Class<?> returnType = method.getReturnType();
                 StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
-                return new ContextStepFunction(name, clazz, metadata, method);
+                map.put(name, new ContextStepFunction(name, clazz, metadata, method));
             }
         }
+    }
 
+    private static void loadStepMethods(Class<?> clazz, Map<String, Method> stepMethods) {
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (Modifier.isPublic(method.getModifiers())) {
+                Step step = method.getAnnotation(Step.class);
+                if (step != null) {
+                    String name = step.name();
+                    if (Strings.isNullOrEmpty(name)) {
+                        name = method.getName();
+                    }
+                    if (!stepMethods.containsKey(name)) {
+                        stepMethods.put(name, method);
+                    }
+                }
+            }
+        }
     }
 
     private static Method findApplyMethod(Class<?> clazz) {

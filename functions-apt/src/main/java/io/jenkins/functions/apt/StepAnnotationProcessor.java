@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
@@ -33,7 +34,9 @@ import java.beans.Introspector;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -79,19 +82,36 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
             if (Strings.isNullOrEmpty(name)) {
                 name = Introspector.decapitalize(element.getSimpleName().toString());
             }
+
+            // TODO if is Callable or Function
             String javaTypeName = javaTypeName(element);
             properties.put(name, javaTypeName);
 
             // TODO write the step file!
 
-            StringWriter writer = new StringWriter();
-            writer.append("step {\n" +
-                    "  metadata {\n" +
-                    "    name '" + name + "'\n" +
-                    "  }\n" +
-                    "  args {\n");
+            writeStepFile(element, name);
 
-            List<VariableElement> fields = findAllFields(element);
+            Map<String, ExecutableElement> methods = findAllStepMethods(element);
+            Set<Map.Entry<String, ExecutableElement>> entries = methods.entrySet();
+            for (Map.Entry<String, ExecutableElement> entry : entries) {
+                String methodName = entry.getKey();
+                ExecutableElement methodElement = entry.getValue();
+                writeStepFile(methodElement, methodName);
+            }
+        }
+    }
+
+    private void writeStepFile(Element element, String name) {
+        StringWriter writer = new StringWriter();
+        writer.append("step {\n" +
+                "  metadata {\n" +
+                "    name '" + name + "'\n" +
+                "  }\n" +
+                "  args {\n");
+
+        if (element instanceof TypeElement) {
+            TypeElement typeElement = (TypeElement) element;
+            List<VariableElement> fields = findAllFields(typeElement);
             for (VariableElement fieldElement : fields) {
                 Argument argument = fieldElement.getAnnotation(Argument.class);
                 if (argument != null) {
@@ -101,29 +121,51 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
                         argName = fieldElement.getSimpleName().toString();
                     }
 
-                    if (Strings.notEmpty(argName)) {
-                        writer.append("    arg {\n" +
-                                "      name '" + argName + "'\n");
-
-                        if (Strings.notEmpty(description)) {
-                            writer.append("      description '" + description + "'\n");
-                        }
-                        String argTypeName = javaTypeName(fieldElement);
-                        if (Strings.notEmpty(argTypeName)) {
-                            writer.append("      className '" + argTypeName + "'\n");
-                        }
-                        writer.append("    }\n");
-                    }
+                    appendArgument(writer, argName, description, javaTypeName(fieldElement));
                 }
             }
-            writer.append("  }\n" +
-                    "  steps {\n" +
-                    "    javaStepFunction  '" + name + " ${args}'\n" +
-                    "  }\n" +
-                    "}\n");
+        } else if (element instanceof ExecutableElement) {
+            ExecutableElement executableElement = (ExecutableElement) element;
+            List<? extends VariableElement> parameters = executableElement.getParameters();
+            if (parameters != null) {
+                for (VariableElement parameter : parameters) {
+                    String argName = null;
+                    String description = null;
+                    Argument argument = parameter.getAnnotation(Argument.class);
+                    if (argument != null) {
+                        argName = argument.name();
+                        description = argument.description();
+                    }
+                    if (Strings.isNullOrEmpty(argName)) {
+                        argName = parameter.getSimpleName().toString();
+                    }
+                    appendArgument(writer, argName, description, javaTypeName(parameter));
+                }
+            }
+        }
 
-            String stepMarkup = writer.toString();
-            writeFile("io.jenkins.functions", name + ".step", stepMarkup);
+        writer.append("  }\n" +
+                "  steps {\n" +
+                "    javaStepFunction  '" + name + " ${args}'\n" +
+                "  }\n" +
+                "}\n");
+
+        String stepMarkup = writer.toString();
+        writeFile("io.jenkins.functions", name + ".step", stepMarkup);
+    }
+
+    private void appendArgument(StringWriter writer, String argName, String description, String argTypeName) {
+        if (Strings.notEmpty(argName)) {
+            writer.append("    arg {\n" +
+                    "      name '" + argName + "'\n");
+
+            if (Strings.notEmpty(description)) {
+                writer.append("      description '" + description + "'\n");
+            }
+            if (Strings.notEmpty(argTypeName)) {
+                writer.append("      className '" + argTypeName + "'\n");
+            }
+            writer.append("    }\n");
         }
     }
 
@@ -152,5 +194,43 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
             }
         }
         return allFieldElements;
+    }
+
+    protected Map<String, ExecutableElement> findAllStepMethods(TypeElement element) {
+        Map<String, ExecutableElement> allMethodElements = new HashMap<>();
+        TypeElement e = element;
+        while (true) {
+            List<ExecutableElement> methodElements = ElementFilter.methodsIn(e.getEnclosedElements());
+            for (ExecutableElement methodElement : methodElements) {
+                Step step = methodElement.getAnnotation(Step.class);
+                if (step != null) {
+                    String name = step.name();
+                    if (Strings.isNullOrEmpty(name)) {
+                        name = methodElement.getSimpleName().toString();
+                    }
+                    if (!allMethodElements.containsKey(name)) {
+                        allMethodElements.put(name, methodElement);
+                    }
+                }
+            }
+
+            TypeMirror superclass = e.getSuperclass();
+            if (superclass instanceof DeclaredType) {
+                DeclaredType declaredType = (DeclaredType) superclass;
+                Element typeElement = declaredType.asElement();
+                String superclassName = javaTypeName(typeElement);
+                if (Strings.isNullOrEmpty(superclassName) || superclassName.equals("java.lang.Object")) {
+                    break;
+                }
+                if (typeElement instanceof TypeElement) {
+                    e = (TypeElement) typeElement;
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        return allMethodElements;
     }
 }
