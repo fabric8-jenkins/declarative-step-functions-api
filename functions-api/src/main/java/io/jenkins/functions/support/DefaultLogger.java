@@ -22,7 +22,7 @@ import java.io.PrintStream;
 
 /**
  */
-public class DefaultLogger implements Logger {
+public class DefaultLogger extends Logger {
     private static Logger instance = new DefaultLogger();
 
     public static Logger getInstance() {

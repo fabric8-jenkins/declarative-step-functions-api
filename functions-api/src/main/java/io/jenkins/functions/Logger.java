@@ -17,8 +17,32 @@ package io.jenkins.functions;
 
 import java.io.PrintStream;
 
-public interface Logger {
-    PrintStream out();
+public abstract class Logger {
+    public abstract PrintStream out();
 
-    PrintStream err();
+    public abstract PrintStream err();
+
+    public void info(String message) {
+        out().println(message);
+    }
+
+    public void warn(String message) {
+        out().println("WARNING: " + message);
+    }
+
+    public void warn(String message, Throwable t) {
+        PrintStream o = out();
+        o.println("WARN: " + message + " " + t);
+        t.printStackTrace(o);
+    }
+
+    public void error(String message) {
+        err().println("ERROR: " + message);
+    }
+
+    public void error(String message, Throwable t) {
+        PrintStream o = err();
+        o.println("ERROR: " + message + " " + t);
+        t.printStackTrace(o);
+    }
 }
