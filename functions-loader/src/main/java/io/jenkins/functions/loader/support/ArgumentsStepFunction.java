@@ -15,6 +15,7 @@
  */
 package io.jenkins.functions.loader.support;
 
+import io.jenkins.functions.loader.FunctionContext;
 import io.jenkins.functions.loader.StepMetadata;
 import org.apache.commons.beanutils.PropertyUtils;
 
@@ -25,27 +26,32 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Implements a step function using a {@link Function} object which takes a context argument containing the arguments
+ * Implements a step function using a {@link Function} object which takes an Arguments object containing the arguments
  * or a Map
  */
-public class ContextStepFunction extends StepFunctionSupport {
+public class ArgumentsStepFunction extends StepFunctionSupport {
     private final Method method;
     private final Class<?> contextType;
 
-    public ContextStepFunction(String name, Class<?> clazz, StepMetadata metadata, Method applyMethod) {
+    public ArgumentsStepFunction(String name, Class<?> clazz, StepMetadata metadata, Method applyMethod) {
         super(name, clazz, metadata);
         this.method = applyMethod;
         this.contextType = applyMethod.getParameterTypes()[0];
     }
 
-    protected Object invokeOnInstance(Map<String, Object> arguments, Object object) {
-        Object context = null;
+    @Override
+    public String toString() {
+        return "ArgumentsStepFunction{" + getName() + "}";
+    }
+
+    protected Object invokeOnInstance(Map<String, Object> arguments, FunctionContext functionContext, Object object) {
+        Object argumentObject = null;
         if (Map.class.isAssignableFrom(contextType)) {
-            context = arguments;
+            argumentObject = arguments;
         } else {
-            // lets try instantiate the context object and inject the parameters
+            // lets try instantiate the argumentObject object and inject the parameters
             try {
-                context = contextType.newInstance();
+                argumentObject = contextType.newInstance();
             } catch (Exception e) {
                 throw new IllegalArgumentException("Could not instantiate class " + contextType.getName() + " due to: " + e, e);
             }
@@ -55,14 +61,14 @@ public class ContextStepFunction extends StepFunctionSupport {
                     String name = entry.getKey();
                     Object value = entry.getValue();
                     try {
-                        PropertyUtils.setProperty(context, name, value);
+                        PropertyUtils.setProperty(argumentObject, name, value);
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Could not set property " + name + " on bean " + object + " to value " + value + " due to: " + e, e);
+                        throw new IllegalArgumentException("Could not set property " + name + " on bean " + argumentObject + " to value " + value + " due to: " + e, e);
                     }
                 }
             }
         }
-        Object[] args = {context};
+        Object[] args = {argumentObject};
         try {
             return method.invoke(object, args);
         } catch (IllegalAccessException e) {

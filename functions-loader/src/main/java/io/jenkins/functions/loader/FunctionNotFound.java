@@ -14,22 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.sample;
-
-import io.jenkins.functions.Argument;
-import io.jenkins.functions.Step;
+package io.jenkins.functions.loader;
 
 /**
+ * Thrown if a function cannot be found
  */
-@Step
-public class Functions extends BaseFunction {
-    @Step
-    public String cheese(@Argument(name = "name") String name, @Argument(name = "amount") int amount) {
-        return "Hello " + name + " #" + amount;
+public class FunctionNotFound extends Exception {
+    private final String functionName;
+
+    public FunctionNotFound(String functionName) {
+        super("No function called " + functionName + " could be found");
+        this.functionName = functionName;
     }
 
-    @Step
-    public String beer(@Argument(name = "location") String location) {
-        return "beer:" + location;
+    public String getFunctionName() {
+        return functionName;
     }
 }

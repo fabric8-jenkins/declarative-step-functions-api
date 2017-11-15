@@ -25,9 +25,10 @@ public interface StepFunction {
      * Invoke the step function passing in the given arguments
      *
      * @param arguments optional arguments by name
+     * @param context
      * @return the result of the step function
      */
-    Object invoke(Map<String, Object> arguments);
+    Object invoke(Map<String, Object> arguments, FunctionContext context);
 
     /**
      * Returns the metadata for the step function

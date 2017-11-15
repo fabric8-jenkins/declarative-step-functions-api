@@ -24,7 +24,7 @@ import java.util.concurrent.Callable;
  * A simple hello function
  */
 @Step(name = "hello")
-public class HelloFunction implements Callable<String> {
+public class HelloFunction extends BaseFunction implements Callable<String> {
     @Argument
     private String name;
 

@@ -16,20 +16,32 @@
  */
 package io.jenkins.functions.sample;
 
-import io.jenkins.functions.Argument;
-import io.jenkins.functions.Step;
+import io.jenkins.functions.Logger;
+
+import javax.inject.Inject;
+import java.io.File;
 
 /**
  */
-@Step
-public class Functions extends BaseFunction {
-    @Step
-    public String cheese(@Argument(name = "name") String name, @Argument(name = "amount") int amount) {
-        return "Hello " + name + " #" + amount;
+public abstract class BaseFunction {
+    @Inject
+    protected Logger logger;
+    @Inject
+    protected File currentDir;
+
+    public Logger getLogger() {
+        return logger;
     }
 
-    @Step
-    public String beer(@Argument(name = "location") String location) {
-        return "beer:" + location;
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+
+    public File getCurrentDir() {
+        return currentDir;
+    }
+
+    public void setCurrentDir(File currentDir) {
+        this.currentDir = currentDir;
     }
 }

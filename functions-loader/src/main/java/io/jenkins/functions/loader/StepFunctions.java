@@ -18,29 +18,50 @@ package io.jenkins.functions.loader;
 import io.jenkins.functions.Step;
 import io.jenkins.functions.loader.helpers.Strings;
 import io.jenkins.functions.loader.support.CallableStepFunction;
-import io.jenkins.functions.loader.support.ContextStepFunction;
+import io.jenkins.functions.loader.support.ArgumentsStepFunction;
 import io.jenkins.functions.loader.support.MethodStepFunction;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import static io.jenkins.functions.loader.helpers.Strings.notEmpty;
 
-
 /**
+ * Helper functions for invoking functions from the classpath
  */
 public class StepFunctions {
 
     private static final String STEP_PROPERTIES = "io/jenkins/functions/steps.properties";
     private static final String CALL_METHOD = "call";
     private static final String APPLY_METHOD = "apply";
+
+    public static Object invokeFunction(String name, Map<String, Object> arguments, FunctionContext context) throws Exception {
+        ClassLoader classLoader = StepFunctions.class.getClassLoader();
+        return invokeFunction(name, arguments, context, classLoader);
+    }
+
+    public static Object invokeFunction(String name, Map<String, Object> arguments, FunctionContext context, ClassLoader classLoader) throws IOException, ClassNotFoundException, FunctionNotFound {
+        Map<String, StepFunction> functions = loadStepFunctions(classLoader);
+        return invokeFunction(name, arguments, context, functions);
+    }
+
+    public static Object invokeFunction(String name, Map<String, Object> arguments, FunctionContext context, Map<String, StepFunction> functions) throws FunctionNotFound {
+        StepFunction function = functions.get(name);
+        if (function == null) {
+            throw new FunctionNotFound(name);
+        }
+        return function.invoke(arguments, context);
+    }
+
 
     public static Map<String, StepFunction> loadStepFunctions(ClassLoader classloader) throws IOException, ClassNotFoundException {
         Map<String, StepFunction> answer = new HashMap<>();
@@ -109,7 +130,7 @@ public class StepFunctions {
             } else {
                 Class<?> returnType = method.getReturnType();
                 StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
-                map.put(name, new ContextStepFunction(name, clazz, metadata, method));
+                map.put(name, new ArgumentsStepFunction(name, clazz, metadata, method));
             }
         }
     }
@@ -134,10 +155,22 @@ public class StepFunctions {
 
     private static Method findApplyMethod(Class<?> clazz) {
         Method[] methods = clazz.getDeclaredMethods();
+        List<Method> found = new ArrayList<>();
         for (Method method : methods) {
+            Step step = method.getAnnotation(Step.class);
             if (method.getName().equals(APPLY_METHOD) && method.getParameterCount() == 1) {
-                return method;
+                found.add(method);
             }
+        }
+        if (found.size() > 1) {
+            for (Method method : found) {
+                if (!method.getReturnType().equals(Object.class)) {
+                    return method;
+                }
+            }
+        }
+        if (!found.isEmpty()) {
+            return found.get(0);
         }
         Class<?> superclass = clazz.getSuperclass();
         if (superclass != null && !superclass.equals(clazz)) {

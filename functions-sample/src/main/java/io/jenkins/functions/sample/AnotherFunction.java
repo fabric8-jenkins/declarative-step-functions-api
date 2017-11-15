@@ -16,39 +16,29 @@
 package io.jenkins.functions.sample;
 
 import io.jenkins.functions.Argument;
-import io.jenkins.functions.Result;
 import io.jenkins.functions.Step;
 
 import java.util.function.Function;
 
-@Step(name = "example")
-public class ExampleFunction extends BaseFunction implements Function<ExampleFunction.Context, Result> {
-
+@Step(name = "anotherFn")
+public class AnotherFunction extends BaseFunction implements Function<AnotherFunction.Arguments, String> {
 
     @Override
     @Step
-    public Result apply(Context context) {
-        Result result;
-        if (context.message == null) {
-            logger.err().println("<message> not provided");
-            result = Result.FAILURE;
-        } else {
-            logger.out().println(String.format("Hello, %s", context.message));
-            result = Result.SUCCESS;
-        }
-        return result;
+    public String apply(Arguments arguments) {
+        return "Hello " + arguments.getName();
     }
 
-    public static class Context {
+    public static class Arguments {
         @Argument
-        private String message;
+        private String name;
 
-        public String getMessage() {
-            return message;
+        public String getName() {
+            return name;
         }
 
-        public void setMessage(String message) {
-            this.message = message;
+        public void setName(String name) {
+            this.name = name;
         }
     }
 }

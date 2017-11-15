@@ -17,6 +17,7 @@ package io.jenkins.functions.loader.support;
 
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
+import io.jenkins.functions.loader.FunctionContext;
 import io.jenkins.functions.loader.StepMetadata;
 import io.jenkins.functions.loader.helpers.Strings;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -37,7 +38,7 @@ public class MethodStepFunction extends StepFunctionSupport {
         this.method = method;
     }
 
-    protected Object invokeOnInstance(Map<String, Object> arguments, Object object) {
+    protected Object invokeOnInstance(Map<String, Object> arguments, FunctionContext context, Object object) {
         Parameter[] parameters = method.getParameters();
         if (parameters == null) {
             parameters = new Parameter[0];

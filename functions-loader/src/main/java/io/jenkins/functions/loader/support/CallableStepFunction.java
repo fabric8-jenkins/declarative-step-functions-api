@@ -15,6 +15,8 @@
  */
 package io.jenkins.functions.loader.support;
 
+import io.jenkins.functions.Step;
+import io.jenkins.functions.loader.FunctionContext;
 import io.jenkins.functions.loader.StepMetadata;
 import org.apache.commons.beanutils.PropertyUtils;
 
@@ -35,7 +37,7 @@ public class CallableStepFunction extends StepFunctionSupport {
         this.method = callableMethod;
     }
 
-    protected Object invokeOnInstance(Map<String, Object> arguments, Object object) {
+    protected Object invokeOnInstance(Map<String, Object> arguments, FunctionContext context, Object object) {
         if (arguments != null) {
             Set<Map.Entry<String, Object>> entries = arguments.entrySet();
             for (Map.Entry<String, Object> entry : entries) {

@@ -15,9 +15,14 @@
  */
 package io.jenkins.functions.loader.support;
 
+import io.jenkins.functions.Logger;
+import io.jenkins.functions.loader.FunctionContext;
 import io.jenkins.functions.loader.StepFunction;
 import io.jenkins.functions.loader.StepMetadata;
+import org.apache.commons.beanutils.PropertyUtils;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 /**
@@ -34,7 +39,7 @@ public abstract class StepFunctionSupport implements StepFunction {
     }
 
     @Override
-    public Object invoke(Map<String, Object> arguments) {
+    public Object invoke(Map<String, Object> arguments, FunctionContext context) {
         Object object;
         try {
             object = clazz.newInstance();
@@ -43,14 +48,37 @@ public abstract class StepFunctionSupport implements StepFunction {
         } catch (IllegalAccessException e) {
             throw new IllegalArgumentException("Could not instantiate class " + clazz.getName() + " due to: " + e, e);
         }
-
-        return invokeOnInstance(arguments, object);
+        injectContext(object, context);
+        return invokeOnInstance(arguments,context,  object);
     }
 
-    protected abstract Object invokeOnInstance(Map<String, Object> arguments, Object object);
+    protected void injectContext(Object object, FunctionContext context) {
+        Logger logger = context.getLogger();
+        if (logger != null) {
+            setBeanPropertty(object, "logger", logger);
+        }
+        File currentDir = context.getCurrentDir();
+        if (currentDir != null) {
+            setBeanPropertty(object, "currentDir", currentDir);
+        }
+    }
+
+    protected void setBeanPropertty(Object object, String name, Object value) {
+        try {
+            PropertyUtils.setProperty(object, name, value);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to set property " + name + " on function object " + object + " due to: " + e, e);
+        }
+    }
+
+    protected abstract Object invokeOnInstance(Map<String, Object> arguments, FunctionContext context, Object object);
 
     @Override
     public StepMetadata getMetadata() {
         return metadata;
+    }
+
+    public String getName() {
+        return getMetadata().getName();
     }
 }

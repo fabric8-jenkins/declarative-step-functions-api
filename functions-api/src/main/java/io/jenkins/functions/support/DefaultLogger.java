@@ -23,7 +23,14 @@ import java.io.PrintStream;
 /**
  */
 public class DefaultLogger extends Logger {
-    private static Logger instance = new DefaultLogger();
+    private static Logger instance = new DefaultLogger(System.out, System.err);
+    private final PrintStream out;
+    private final PrintStream err;
+
+    public DefaultLogger(PrintStream out, PrintStream err) {
+        this.out = out;
+        this.err = err;
+    }
 
     public static Logger getInstance() {
         return instance;
@@ -31,11 +38,11 @@ public class DefaultLogger extends Logger {
 
     @Override
     public PrintStream out() {
-        return System.out;
+        return out;
     }
 
     @Override
     public PrintStream err() {
-        return System.err;
+        return err;
     }
 }

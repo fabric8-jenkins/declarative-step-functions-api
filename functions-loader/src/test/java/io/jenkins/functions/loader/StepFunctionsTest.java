@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class StepFunctionsTest {
     protected Map<String, StepFunction> functionMap;
+    protected FunctionContext functionContext = new FunctionContext();
 
     public void assertFunctionHasValidMetadata(StepFunction function, String methodName) {
         StepMetadata metadata = function.getMetadata();
@@ -55,20 +56,31 @@ public class StepFunctionsTest {
 
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("name", "James");
-        Object result = function.invoke(arguments);
+        Object result = function.invoke(arguments, functionContext);
         System.out.println("Invoked " + function + " with result: " + result);
         assertThat(result).isEqualTo("Hello James");
     }
 
     @Test
-    public void testInvokeContextFunction() throws Exception {
+    public void testInvokeArgumentsFunction() throws Exception {
         StepFunction function = assertValidFunction("example");
 
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("message", "Hello");
-        Object result = function.invoke(arguments);
+        Object result = function.invoke(arguments, functionContext);
         System.out.println("Invoked " + function + " with result: " + result);
         assertThat(result).isEqualTo(Result.SUCCESS);
+    }
+
+    @Test
+    public void testInvokeAnotherArgumentsFunction() throws Exception {
+        StepFunction function = assertValidFunction("anotherFn");
+
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("name", "James");
+        Object result = function.invoke(arguments, functionContext);
+        System.out.println("Invoked " + function + " with result: " + result);
+        assertThat(result).isEqualTo("Hello James");
     }
 
     @Test
@@ -78,7 +90,7 @@ public class StepFunctionsTest {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("name", "James");
         arguments.put("amount", 69);
-        Object result = function.invoke(arguments);
+        Object result = function.invoke(arguments, functionContext);
         System.out.println("Invoked " + function + " with result: " + result);
         assertThat(result).isEqualTo("Hello James #69");
     }
