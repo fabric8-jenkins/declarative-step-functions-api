@@ -22,7 +22,6 @@ import io.jenkins.functions.loader.StepMetadata;
 import org.apache.commons.beanutils.PropertyUtils;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 /**
@@ -49,7 +48,7 @@ public abstract class StepFunctionSupport implements StepFunction {
             throw new IllegalArgumentException("Could not instantiate class " + clazz.getName() + " due to: " + e, e);
         }
         injectContext(object, context);
-        return invokeOnInstance(arguments,context,  object);
+        return invokeOnInstance(arguments, context, object);
     }
 
     protected void injectContext(Object object, FunctionContext context) {

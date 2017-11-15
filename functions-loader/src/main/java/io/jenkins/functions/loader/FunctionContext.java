@@ -29,11 +29,6 @@ public class FunctionContext {
     private Logger logger;
     private File currentDir;
 
-    public static FunctionContext newInstance(File currentDir, PrintStream out, PrintStream err) {
-        Logger logger = new DefaultLogger(out, err);
-        return new FunctionContext(logger, currentDir);
-    }
-
     public FunctionContext() {
         this.logger = DefaultLogger.getInstance();
         this.currentDir = new File(".");
@@ -42,6 +37,11 @@ public class FunctionContext {
     public FunctionContext(Logger logger, File currentDir) {
         this.logger = logger;
         this.currentDir = currentDir;
+    }
+
+    public static FunctionContext newInstance(File currentDir, PrintStream out, PrintStream err) {
+        Logger logger = new DefaultLogger(out, err);
+        return new FunctionContext(logger, currentDir);
     }
 
     public Logger getLogger() {

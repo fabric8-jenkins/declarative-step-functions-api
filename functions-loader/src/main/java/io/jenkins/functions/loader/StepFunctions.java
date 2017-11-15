@@ -17,8 +17,8 @@ package io.jenkins.functions.loader;
 
 import io.jenkins.functions.Step;
 import io.jenkins.functions.loader.helpers.Strings;
-import io.jenkins.functions.loader.support.CallableStepFunction;
 import io.jenkins.functions.loader.support.ArgumentsStepFunction;
+import io.jenkins.functions.loader.support.CallableStepFunction;
 import io.jenkins.functions.loader.support.MethodStepFunction;
 
 import java.io.IOException;
