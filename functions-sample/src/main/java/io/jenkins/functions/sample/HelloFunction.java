@@ -36,6 +36,7 @@ public class HelloFunction extends BaseFunction implements Callable<String> {
     }
 
     @Override
+    @Step
     public String call() throws Exception {
         return "Hello " + name;
     }

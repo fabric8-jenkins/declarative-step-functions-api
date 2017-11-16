@@ -36,6 +36,7 @@ public class HelloGoodbyeFunction extends HelloFunction {
     }
 
     @Override
+    @Step
     public String call() throws Exception {
         return super.call() + " " + bye;
     }

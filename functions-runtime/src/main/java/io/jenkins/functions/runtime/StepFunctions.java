@@ -15,6 +15,7 @@
  */
 package io.jenkins.functions.runtime;
 
+import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
 import io.jenkins.functions.runtime.helpers.Strings;
 import io.jenkins.functions.runtime.support.ArgumentsStepFunction;
@@ -22,16 +23,21 @@ import io.jenkins.functions.runtime.support.CallableStepFunction;
 import io.jenkins.functions.runtime.support.MethodStepFunction;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
 
@@ -94,20 +100,14 @@ public class StepFunctions {
     }
 
     protected static void loadStepFunctionsForClass(String name, Class<?> clazz, ClassLoader classLoader, Map<String, StepFunction> map) {
-        String description = null;
         Step step = clazz.getAnnotation(Step.class);
-        if (step != null) {
-            description = step.description();
-        }
-
-        // TODO load argument metadata!
-        ArgumentMetadata[] argumentMetadatas = {};
 
         Method method;
         try {
             method = clazz.getMethod(CALL_METHOD);
             Class<?> returnType = method.getReturnType();
-            StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadatas, clazz);
+            ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader);
+            StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadata, clazz);
             map.put(name, new CallableStepFunction(name, clazz, metadata, method));
         } catch (NoSuchMethodException e) {
             method = findApplyMethod(clazz);
@@ -123,17 +123,20 @@ public class StepFunctions {
                         String methodName = entry.getKey();
                         method = entry.getValue();
                         Class<?> returnType = method.getReturnType();
-                        StepMetadata metadata = new StepMetadata(methodName, step, returnType, argumentMetadatas, clazz);
+                        ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(methodName, classLoader);
+                        StepMetadata metadata = new StepMetadata(methodName, step, returnType, argumentMetadata, clazz);
                         map.put(methodName, new MethodStepFunction(name, clazz, metadata, method));
                     }
                 }
             } else {
                 Class<?> returnType = method.getReturnType();
-                StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadatas, clazz);
+                ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader);
+                StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadata, clazz);
                 map.put(name, new ArgumentsStepFunction(name, clazz, metadata, method));
             }
         }
     }
+
 
     private static void loadStepMethods(Class<?> clazz, Map<String, Method> stepMethods) {
         Method[] methods = clazz.getDeclaredMethods();
@@ -190,5 +193,153 @@ public class StepFunctions {
             throw new FunctionNotFoundForClass(functionName, clazz);
         }
         return answer;
+    }
+
+    protected static ArgumentMetadata[] loadArgumentMetadataFromMethod(Method method) {
+        List<ArgumentMetadata> list = new ArrayList<>();
+        Parameter[] parameters = method.getParameters();
+        for (Parameter parameter : parameters) {
+            ArgumentMetadata metadata = ArgumentMetadata.newInstance(parameter);
+            if (metadata != null) {
+                list.add(metadata);
+            }
+        }
+        return toArgumentMetadataArray(list);
+    }
+
+    protected static ArgumentMetadata[] loadArgumentMetadataFromClass(Class<?> clazz) {
+        SortedMap<String, ArgumentMetadata> metadataMap = new TreeMap<>();
+        Class<?> c = clazz;
+        while (true) {
+            addArgumentMetadataFromClass(metadataMap, c);
+            c = c.getSuperclass();
+            if (c == null || c.equals(Object.class)) {
+                break;
+            }
+        }
+        return toArgumentMetadataArray(metadataMap.values());
+    }
+
+    protected static void addArgumentMetadataFromClass(Map<String, ArgumentMetadata> list, Class<?> clazz) {
+        Field[] declaredFields = clazz.getDeclaredFields();
+        for (Field field : declaredFields) {
+            Argument argument = field.getAnnotation(Argument.class);
+            if (argument == null) {
+                argument = field.getDeclaredAnnotation(Argument.class);
+            }
+            if (argument != null) {
+                ArgumentMetadata metadata = ArgumentMetadata.newInstance(field);
+                String name = metadata.getName();
+                if (metadata != null && !list.containsKey(name)) {
+                    list.put(name, metadata);
+                }
+            }
+        }
+    }
+
+
+    protected static ArgumentMetadata[] loadArgumentMetadataFromProperties(String name, ClassLoader classLoader) {
+        Properties properties = new Properties();
+        URL resource = classLoader.getResource("io/jenkins/functions/" + name + "-arguments.properties");
+        if (resource != null) {
+            try {
+                properties.load(resource.openStream());
+            } catch (IOException e) {
+               throw new RuntimeException("Failed to load " + resource + " due to: " + e, e);
+            }
+        }
+        return loadArgumentMetadataFromProperties(name, properties, classLoader);
+    }
+
+    protected static ArgumentMetadata[] loadArgumentMetadataFromProperties(String stepName, Properties properties, ClassLoader classLoader) {
+        SortedMap<String,ArgumentProperties> map = new TreeMap<>();
+
+        Set<Map.Entry<Object, Object>> entries = properties.entrySet();
+        for (Map.Entry<Object, Object> entry : entries) {
+            Object keyObject = entry.getKey();
+            Object valueObject = entry.getValue();
+            if (keyObject != null && valueObject != null) {
+                String key = keyObject.toString();
+                String  value = valueObject.toString();
+
+
+                int idx = key.lastIndexOf('.');
+                if (idx > 0) {
+                    String attributeName = key.substring(0, idx);
+                    String propertyName = key.substring(idx + 1);
+                    ArgumentProperties attribute = map.get(attributeName);
+                    if (attribute == null) {
+                        attribute = new ArgumentProperties(attributeName);
+                        map.put(attributeName, attribute);
+                    }
+                    attribute.setProperty(stepName, propertyName, value);
+                }
+            }
+        }
+        List<ArgumentMetadata> list = new ArrayList<>();
+        for (Map.Entry<String, ArgumentProperties> entry : map.entrySet()) {
+            ArgumentMetadata metadata = entry.getValue().createAttributeMetadata(classLoader);
+            if (metadata != null) {
+                list.add(metadata);
+            }
+        }
+        return toArgumentMetadataArray(list);
+    }
+
+    protected static class ArgumentProperties {
+        private final String attributeName;
+        private String displayName;
+        private String description;
+        private String typeName;
+
+        public ArgumentProperties(String attributeName) {
+            this.attributeName = attributeName;
+            this.displayName = attributeName;
+        }
+
+        public ArgumentMetadata createAttributeMetadata(ClassLoader classLoader) {
+            if (Strings.isNullOrEmpty(typeName)) {
+                return null;
+            }
+            Class<?> clazz = null;
+            try {
+                clazz = classLoader.loadClass(typeName);
+            } catch (ClassNotFoundException e) {
+                System.out.println("WARNING: failed to load " + typeName + " on ClassLoader " + classLoader);
+            }
+            return new ArgumentMetadata(attributeName, displayName, description, clazz, typeName);
+        }
+
+
+        public void setProperty(String stepName, String propertyName, String value) {
+            switch (propertyName) {
+                case "description": description = value; break;
+                case "displayName": displayName = value; break;
+                case "type": typeName = value; break;
+                default:
+                    System.out.println("Warning step " + stepName + "  argument " + attributeName + " has unknown property " + propertyName + " with value " + value);
+            }
+        }
+
+
+        public String getAttributeName() {
+            return attributeName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getTypeName() {
+            return typeName;
+        }
+
+    }
+    protected static ArgumentMetadata[] toArgumentMetadataArray(Collection<ArgumentMetadata> list) {
+        return list.toArray(new ArgumentMetadata[list.size()]);
     }
 }

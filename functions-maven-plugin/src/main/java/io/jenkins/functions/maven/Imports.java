@@ -29,7 +29,7 @@ import java.util.TreeSet;
  * This class also generates the import statements.
  */
 public class Imports {
-    private Map<String,String> simpleNameToClassName = new HashMap<>();
+    private Map<String, String> simpleNameToClassName = new HashMap<>();
     private SortedSet<String> importList = new TreeSet<>();
 
     public void addImports(String... classNames) {
@@ -43,9 +43,16 @@ public class Imports {
     }
 
     public String simpleName(String className) {
-        int idx = className.lastIndexOf('.');
+        String genericPart = "";
+        String nonGenericClassName = className;
+        int genIdx = nonGenericClassName.indexOf('<');
+        if (genIdx > 0) {
+            genericPart = className.substring(genIdx);
+            nonGenericClassName = className.substring(0, genIdx);
+        }
+        int idx = nonGenericClassName.lastIndexOf('.');
         if (idx > 0) {
-            return simpleName(className, className.substring(0, idx), className.substring(idx + 1));
+            return simpleName(nonGenericClassName, nonGenericClassName.substring(0, idx), nonGenericClassName.substring(idx + 1)) + genericPart;
         } else {
             return className;
         }
@@ -63,7 +70,9 @@ public class Imports {
         if (current == null) {
             simpleNameToClassName.put(simpleName, fullName);
             if (!importList.contains(fullName)) {
-                importList.add(fullName);
+                if (fullName.indexOf('.') > 0 && !fullName.startsWith("java.lang")) {
+                    importList.add(fullName);
+                }
             }
         } else if (!current.equals(fullName)) {
             return fullName;

@@ -85,6 +85,11 @@ public class GenerateMojo extends AbstractMojo {
         ArgumentMetadata[] argumentMetadata = metadata.getArgumentMetadata();
         String stepClassName = capitalise(name) + "Step";
 
+        // lets make sure the generated step class doesn't clash with the step implementation class name
+        if (implementationClass.getSimpleName().equals(stepClassName)) {
+            stepClassName += "Wrapper";
+        }
+
         File packageDir = outputDir;
         if (notEmpty(packageName)) {
             String packagePath = packageName.replace('.', File.separatorChar);
@@ -109,9 +114,9 @@ public class GenerateMojo extends AbstractMojo {
             for (ArgumentMetadata argument : argumentMetadata) {
                 String argumentName = argument.getName();
                 String propertyName = capitalise(argumentName);
-                String typeName = imports.simpleName(argument.getType());
+                String typeName = imports.simpleName(argument.getTypeName());
                 attributesWriter.write("    public " + typeName + " get" + propertyName + "() {\n" +
-                        "        return getArgument(\"" + argumentName + "\", " + typeName + ".class);\n" +
+                        "        return getArgument(\"" + argumentName + "\", " + removeGenerics(typeName) + ".class);\n" +
                         "    }\n" +
                         "\n" +
                         "    @DataBoundSetter\n" +
@@ -176,6 +181,17 @@ public class GenerateMojo extends AbstractMojo {
                     "    }\n" +
                     "}\n");
         }
+    }
+
+    /**
+     * Returns the type name without the generics postfix
+     */
+    private String removeGenerics(String typeName) {
+        int idx = typeName.indexOf('<');
+        if (idx > 0) {
+            return typeName.substring(0, idx);
+        }
+        return typeName;
     }
 }
 

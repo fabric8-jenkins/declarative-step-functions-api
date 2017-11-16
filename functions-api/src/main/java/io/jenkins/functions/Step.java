@@ -33,9 +33,18 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Step {
+    /**
+     * Returns the short name of the step which is usually similar to an identifier (starts with a lowercase and no spaces or special characters)
+     */
     String name() default "";
 
+    /**
+     * Returns the display name of the argument for rendering in UIs such as the Blue Ocean editor
+     */
     String displayName() default "";
 
+    /**
+     * Returns the description for help or tooltip
+     */
     String description() default "";
 }
