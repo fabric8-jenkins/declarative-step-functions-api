@@ -34,4 +34,8 @@ public final class Strings {
     public static boolean notEmpty(String text) {
         return !isNullOrEmpty(text);
     }
+
+    public static String capitalise(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
+    }
 }

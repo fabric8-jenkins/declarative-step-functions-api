@@ -15,30 +15,46 @@
  */
 package io.jenkins.functions.loader;
 
+import io.jenkins.functions.Step;
+
 import java.util.Arrays;
 
 /**
  */
 public class StepMetadata {
     private final String name;
+    private final String displayName;
     private final String description;
     private final Class<?> returnType;
-    private final ArgumentMetadata[] argumentsMetadata;
+    private final ArgumentMetadata[] argumentMetadata;
+    private final Class<?> implementationClass;
 
-    public StepMetadata(String name, String description, Class<?> returnType, ArgumentMetadata[] argumentsMetadata) {
+    public StepMetadata(String name, Step step, Class<?> returnType, ArgumentMetadata[] argumentMetadata, Class<?> implementationClass) {
         this.name = name;
-        this.description = description;
         this.returnType = returnType;
-        this.argumentsMetadata = argumentsMetadata;
+        this.argumentMetadata = argumentMetadata;
+        this.implementationClass = implementationClass;
+        if (step != null) {
+            this.displayName = step.displayName();
+            this.description = step.description();
+        } else {
+            // TODO should we try split camel case?
+            this.displayName = name;
+            this.description = "";
+        }
     }
 
     @Override
     public String toString() {
-        return "StepMetadata{" + name + Arrays.toString(argumentsMetadata) + " returnType: " + returnType + "}";
+        return "StepMetadata{" + name + Arrays.toString(argumentMetadata) + " returnType: " + returnType + "}";
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public String getDescription() {
@@ -49,8 +65,12 @@ public class StepMetadata {
         return returnType;
     }
 
-    public ArgumentMetadata[] getArgumentsMetadata() {
-        return argumentsMetadata;
+    public ArgumentMetadata[] getArgumentMetadata() {
+        return argumentMetadata;
+    }
+
+    public Class<?> getImplementationClass() {
+        return implementationClass;
     }
 
     /**
@@ -59,9 +79,9 @@ public class StepMetadata {
     public String getPrototype() {
         StringBuilder builder = new StringBuilder(name);
         builder.append("(");
-        if (argumentsMetadata != null) {
+        if (argumentMetadata != null) {
             int count = 0;
-            for (ArgumentMetadata parameterInfo : argumentsMetadata) {
+            for (ArgumentMetadata parameterInfo : argumentMetadata) {
                 if (count++ > 0) {
                     builder.append(", ");
                 }

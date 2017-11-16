@@ -107,7 +107,7 @@ public class StepFunctions {
         try {
             method = clazz.getMethod(CALL_METHOD);
             Class<?> returnType = method.getReturnType();
-            StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
+            StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadatas, clazz);
             map.put(name, new CallableStepFunction(name, clazz, metadata, method));
         } catch (NoSuchMethodException e) {
             method = findApplyMethod(clazz);
@@ -123,13 +123,13 @@ public class StepFunctions {
                         String methodName = entry.getKey();
                         method = entry.getValue();
                         Class<?> returnType = method.getReturnType();
-                        StepMetadata metadata = new StepMetadata(methodName, description, returnType, argumentMetadatas);
+                        StepMetadata metadata = new StepMetadata(methodName, step, returnType, argumentMetadatas, clazz);
                         map.put(methodName, new MethodStepFunction(name, clazz, metadata, method));
                     }
                 }
             } else {
                 Class<?> returnType = method.getReturnType();
-                StepMetadata metadata = new StepMetadata(name, description, returnType, argumentMetadatas);
+                StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadatas, clazz);
                 map.put(name, new ArgumentsStepFunction(name, clazz, metadata, method));
             }
         }

@@ -176,6 +176,7 @@
     <module>functions-loader</module>
     <module>functions-step</module>
     <module>functions-sample</module>
+    <module>functions-maven-plugin</module>
   </modules>
 
 

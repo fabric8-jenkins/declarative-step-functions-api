@@ -37,7 +37,7 @@ public class StepFunctionsTest {
 
         assertThat(metadata.getName()).isEqualTo(methodName);
         assertThat(metadata.getReturnType()).isNotNull();
-        ArgumentMetadata[] parameterInfos = metadata.getArgumentsMetadata();
+        ArgumentMetadata[] parameterInfos = metadata.getArgumentMetadata();
         assertThat(parameterInfos).isNotNull();
 
         // TODO
