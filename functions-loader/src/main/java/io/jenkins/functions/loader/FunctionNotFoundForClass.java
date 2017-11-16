@@ -15,23 +15,24 @@
  */
 package io.jenkins.functions.loader;
 
-import java.util.Map;
-
 /**
- * Java interface for working with Java step function implementations
+ * Thrown if a function cannot be found for a given class
  */
-public interface StepFunction {
-    /**
-     * Invoke the step function passing in the given arguments
-     *
-     * @param arguments optional arguments by name
-     * @param context
-     * @return the result of the step function
-     */
-    Object invoke(Map<String, Object> arguments, FunctionContext context);
+public class FunctionNotFoundForClass extends RuntimeException {
+    private final String functionName;
+    private final Class<?> functionClass;
 
-    /**
-     * Returns the metadata for the step function
-     */
-    StepMetadata getMetadata();
+    public FunctionNotFoundForClass(String functionName, Class<?> functionClass) {
+        super("No function called " + functionName + " could be found for class " + functionClass.getName());
+        this.functionName = functionName;
+        this.functionClass = functionClass;
+    }
+
+    public String getFunctionName() {
+        return functionName;
+    }
+
+    public Class<?> getFunctionClass() {
+        return functionClass;
+    }
 }

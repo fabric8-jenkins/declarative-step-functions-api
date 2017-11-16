@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -93,7 +93,7 @@ public class StepFunctions {
         }
     }
 
-    private static void loadStepFunctionsForClass(String name, Class<?> clazz, ClassLoader classLoader, Map<String, StepFunction> map) {
+    protected static void loadStepFunctionsForClass(String name, Class<?> clazz, ClassLoader classLoader, Map<String, StepFunction> map) {
         String description = null;
         Step step = clazz.getAnnotation(Step.class);
         if (step != null) {
@@ -177,5 +177,18 @@ public class StepFunctions {
             return findApplyMethod(superclass);
         }
         return null;
+    }
+
+    /**
+     * Returns the step function for the given name and implementation class
+     */
+    public static StepFunction loadFunction(String functionName, Class<?> clazz) {
+        Map<String, StepFunction> map = new HashMap<>();
+        loadStepFunctionsForClass(functionName, clazz, clazz.getClassLoader(), map);
+        StepFunction answer = map.get(functionName);
+        if (answer == null) {
+            throw new FunctionNotFoundForClass(functionName, clazz);
+        }
+        return answer;
     }
 }
