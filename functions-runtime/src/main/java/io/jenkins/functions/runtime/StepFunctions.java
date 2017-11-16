@@ -17,11 +17,12 @@ package io.jenkins.functions.runtime;
 
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
-import io.jenkins.functions.runtime.helpers.PrimitiveTypes;
 import io.jenkins.functions.runtime.helpers.Strings;
+import io.jenkins.functions.runtime.support.ArgumentProperties;
 import io.jenkins.functions.runtime.support.ArgumentsStepFunction;
 import io.jenkins.functions.runtime.support.CallableStepFunction;
 import io.jenkins.functions.runtime.support.MethodStepFunction;
+import io.jenkins.functions.runtime.support.StepProperties;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -39,8 +40,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
 
 /**
  * Helper functions for invoking functions from the classpath
@@ -71,44 +70,70 @@ public class StepFunctions {
 
 
     public static Map<String, StepFunction> loadStepFunctions(ClassLoader classloader) throws IOException, ClassNotFoundException {
+        Map<String, StepProperties> stepPropertiesMap = loadStepFunctionMetadata(classloader);
+
         Map<String, StepFunction> answer = new HashMap<>();
+        loadStepFunctions(classloader, answer, stepPropertiesMap);
+        return answer;
+    }
+
+    protected static Map<String, StepProperties> loadStepFunctionMetadata(ClassLoader classloader) throws IOException, ClassNotFoundException {
+        Map<String, StepProperties> stepPropertiesMap = new HashMap<>();
         Enumeration<URL> resources = classloader.getResources(STEP_PROPERTIES);
         if (resources != null) {
             while (resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 if (url != null) {
-                    loadStepFunctionsForURL(classloader, url, answer);
+                    loadStepFunctionMetadataForURL(classloader, url, stepPropertiesMap);
                 }
             }
         }
-
-        return answer;
+        return stepPropertiesMap;
     }
 
-    private static void loadStepFunctionsForURL(ClassLoader classLoader, URL url, Map<String, StepFunction> map) throws IOException, ClassNotFoundException {
+    private static void loadStepFunctionMetadataForURL(ClassLoader classLoader, URL url, Map<String, StepProperties> stepPropertiesMap) throws IOException, ClassNotFoundException {
         Properties properties = new Properties();
         properties.load(url.openStream());
 
         Set<Map.Entry<Object, Object>> entries = properties.entrySet();
         for (Map.Entry<Object, Object> entry : entries) {
-            String name = entry.getKey().toString();
-            String className = entry.getValue().toString();
-            if (notEmpty(name) && notEmpty(className)) {
-                Class<?> clazz = classLoader.loadClass(className);
-                loadStepFunctionsForClass(name, clazz, classLoader, map);
+            String expression = entry.getKey().toString();
+            String value = entry.getValue().toString();
+            int idx = expression.lastIndexOf('.');
+            if (idx > 0) {
+                String name = expression.substring(0, idx);
+                String propertyName = expression.substring(idx + 1);
+                StepProperties stepProperties = stepPropertiesMap.get(name);
+                if (stepProperties == null) {
+                    stepProperties = new StepProperties(name, null);
+                    stepPropertiesMap.put(name, stepProperties);
+                }
+                stepProperties.setProperty(name, propertyName, value);
             }
         }
     }
 
-    protected static void loadStepFunctionsForClass(String name, Class<?> clazz, ClassLoader classLoader, Map<String, StepFunction> map) {
-        Step step = clazz.getAnnotation(Step.class);
+    private static void loadStepFunctions(ClassLoader classLoader, Map<String, StepFunction> map, Map<String, StepProperties> stepPropertiesMap) throws ClassNotFoundException {
+        for (StepProperties stepProperties : stepPropertiesMap.values()) {
+            String className = stepProperties.getTypeName();
+            if (Strings.isNullOrEmpty(className)) {
+                System.out.println("WARNING no typeName for step: " +  stepProperties.getName());
+            } else {
+                Class<?> clazz = classLoader.loadClass(className);
+                loadStepFunctionsForClass(stepProperties, clazz, classLoader, map);
+            }
+        }
+    }
 
+    protected static void loadStepFunctionsForClass(StepProperties classStepProperties, Class<?> clazz, ClassLoader classLoader, Map<String, StepFunction> map) {
+        String name = classStepProperties.getName();
+        classStepProperties.configure(clazz.getAnnotation(Step.class));
         Method method;
         try {
             method = clazz.getMethod(CALL_METHOD);
             Class<?> returnType = method.getReturnType();
             ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader);
-            StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadata, clazz);
+            StepMetadata metadata = new StepMetadata(name, new StepProperties(classStepProperties, method), returnType, argumentMetadata, clazz);
             map.put(name, new CallableStepFunction(name, clazz, metadata, method));
         } catch (NoSuchMethodException e) {
             method = findApplyMethod(clazz);
@@ -125,14 +150,14 @@ public class StepFunctions {
                         method = entry.getValue();
                         Class<?> returnType = method.getReturnType();
                         ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(methodName, classLoader);
-                        StepMetadata metadata = new StepMetadata(methodName, step, returnType, argumentMetadata, clazz);
+                        StepMetadata metadata = new StepMetadata(methodName, new StepProperties(classStepProperties, method), returnType, argumentMetadata, clazz);
                         map.put(methodName, new MethodStepFunction(name, clazz, metadata, method));
                     }
                 }
             } else {
                 Class<?> returnType = method.getReturnType();
                 ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader);
-                StepMetadata metadata = new StepMetadata(name, step, returnType, argumentMetadata, clazz);
+                StepMetadata metadata = new StepMetadata(name, new StepProperties(classStepProperties, method), returnType, argumentMetadata, clazz);
                 map.put(name, new ArgumentsStepFunction(name, clazz, metadata, method));
             }
         }
@@ -187,8 +212,20 @@ public class StepFunctions {
      * Returns the step function for the given name and implementation class
      */
     public static StepFunction loadFunction(String functionName, Class<?> clazz) {
+        ClassLoader classLoader = clazz.getClassLoader();
+        Map<String, StepProperties> stepPropertiesMap = null;
+        try {
+            stepPropertiesMap = loadStepFunctionMetadata(classLoader);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load step function metadata: " + e, e);
+        }
+        StepProperties stepFunctionProperties = stepPropertiesMap.get(functionName);
+        if (stepFunctionProperties == null) {
+            stepFunctionProperties = new StepProperties(functionName, clazz.getAnnotation(Step.class));
+        }
+
         Map<String, StepFunction> map = new HashMap<>();
-        loadStepFunctionsForClass(functionName, clazz, clazz.getClassLoader(), map);
+        loadStepFunctionsForClass(stepFunctionProperties, clazz, classLoader, map);
         StepFunction answer = map.get(functionName);
         if (answer == null) {
             throw new FunctionNotFoundForClass(functionName, clazz);
@@ -287,62 +324,6 @@ public class StepFunctions {
         return toArgumentMetadataArray(list);
     }
 
-    protected static class ArgumentProperties {
-        private final String attributeName;
-        private String displayName;
-        private String description;
-        private String typeName;
-
-        public ArgumentProperties(String attributeName) {
-            this.attributeName = attributeName;
-            this.displayName = attributeName;
-        }
-
-        public ArgumentMetadata createAttributeMetadata(ClassLoader classLoader) {
-            if (Strings.isNullOrEmpty(typeName)) {
-                return null;
-            }
-            String className = Strings.removeGenericsFromClassName(typeName);
-            Class<?> clazz = PrimitiveTypes.getClass(className);
-            if (clazz == null) {
-                try {
-                    clazz = classLoader.loadClass(className);
-                } catch (ClassNotFoundException e) {
-                    System.out.println("WARNING: failed to load " + className + " on ClassLoader " + classLoader);
-                }
-            }
-            return new ArgumentMetadata(attributeName, displayName, description, clazz, className);
-        }
-
-
-        public void setProperty(String stepName, String propertyName, String value) {
-            switch (propertyName) {
-                case "description": description = value; break;
-                case "displayName": displayName = value; break;
-                case "type": typeName = value; break;
-                default:
-                    System.out.println("Warning step " + stepName + "  argument " + attributeName + " has unknown property " + propertyName + " with value " + value);
-            }
-        }
-
-
-        public String getAttributeName() {
-            return attributeName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public String getTypeName() {
-            return typeName;
-        }
-
-    }
     protected static ArgumentMetadata[] toArgumentMetadataArray(Collection<ArgumentMetadata> list) {
         return list.toArray(new ArgumentMetadata[list.size()]);
     }

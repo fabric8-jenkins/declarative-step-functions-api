@@ -22,12 +22,12 @@ import io.jenkins.functions.Step;
  */
 @Step
 public class Functions extends BaseFunction {
-    @Step
+    @Step(displayName = "Cheesey hello")
     public String cheese(@Argument(name = "name") String name, @Argument(name = "amount") int amount) {
         return "Hello " + name + " #" + amount;
     }
 
-    @Step
+    @Step(displayName = "Finds the beer")
     public String beer(@Argument(name = "location") String location) {
         return "beer:" + location;
     }

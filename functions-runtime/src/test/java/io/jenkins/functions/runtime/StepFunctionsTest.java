@@ -35,13 +35,20 @@ public class StepFunctionsTest {
         assertThat(metadata).describedAs("No metadata on function " + function).isNotNull();
         System.out.println("Function has metadata " + metadata);
 
-        assertThat(metadata.getName()).isEqualTo(methodName);
+        assertThat(metadata.getName()).describedAs("name").isEqualTo(methodName);
+        String displayName = metadata.getDisplayName();
+        assertThat(displayName).describedAs("display name for " + methodName).isNotEmpty().isNotEqualTo(methodName);
         assertThat(metadata.getReturnType()).isNotNull();
         ArgumentMetadata[] parameterInfos = metadata.getArgumentMetadata();
-        assertThat(parameterInfos).isNotNull();
-
-        // TODO
-        //assertThat(parameterInfos).isNotEmpty();
+        assertThat(parameterInfos).
+                describedAs("No argument metadata for function " + methodName + " on class " + metadata.getImplementationClass().getName()).
+                isNotEmpty();
+        for (ArgumentMetadata argumentMetadata : parameterInfos) {
+            String argName = argumentMetadata.getName();
+            assertThat(argName).describedAs("name of argument for  " + methodName).isNotEmpty();
+            assertThat(argumentMetadata.getDisplayName()).describedAs("displayName for " + methodName + "." + argName).isNotEmpty();
+        }
+        assertThat(parameterInfos).isNotEmpty();
     }
 
     @Before

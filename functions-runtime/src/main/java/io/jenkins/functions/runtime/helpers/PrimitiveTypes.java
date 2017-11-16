@@ -25,7 +25,7 @@ public class PrimitiveTypes {
     private static Map<String, Class<?>> classMap = new HashMap<>();
 
     static {
-        loadClasses(byte.class, char.class, short.class, int.class, long.class,
+        loadClasses(boolean.class, byte.class, char.class, short.class, int.class, long.class,
                 float.class, double.class);
     }
 

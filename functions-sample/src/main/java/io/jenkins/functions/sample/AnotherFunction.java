@@ -20,7 +20,7 @@ import io.jenkins.functions.Step;
 
 import java.util.function.Function;
 
-@Step(name = "anotherFn")
+@Step(name = "anotherFn", displayName = "Invokes another function thingy")
 public class AnotherFunction extends BaseFunction implements Function<AnotherFunction.Arguments, String> {
 
     @Override

@@ -20,7 +20,7 @@ import io.jenkins.functions.Step;
 
 /**
  */
-@Step(name = "helloGoodbye")
+@Step(name = "helloGoodbye", displayName = "Does a hello and goodbye")
 public class HelloGoodbyeFunction extends HelloFunction {
     @Argument
     private String bye;

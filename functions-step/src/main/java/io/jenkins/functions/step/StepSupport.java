@@ -16,6 +16,7 @@
 package io.jenkins.functions.step;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.FilePath;
 import hudson.model.TaskListener;
 import io.jenkins.functions.runtime.StepFunction;
 import io.jenkins.functions.runtime.StepFunctions;
@@ -25,8 +26,10 @@ import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.jenkinsci.plugins.workflow.steps.SynchronousStepExecution;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -104,7 +107,7 @@ public abstract class StepSupport extends Step {
 
         @Override
         public Set<? extends Class<?>> getRequiredContext() {
-            return Collections.singleton(TaskListener.class);
+            return new HashSet<Class<?>>(Arrays.asList(TaskListener.class, FilePath.class));
         }
     }
 

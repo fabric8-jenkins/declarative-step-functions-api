@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
 /**
  * A simple hello function
  */
-@Step(name = "hello")
+@Step(name = "hello", displayName = "Does a hello")
 public class HelloFunction extends BaseFunction implements Callable<String> {
     @Argument
     private String name;

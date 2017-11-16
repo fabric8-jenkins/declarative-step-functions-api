@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -80,14 +80,14 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
     }
 
     protected void processStepClass(final RoundEnvironment roundEnv, final TypeElement element, Properties properties) {
-        final Step property = element.getAnnotation(Step.class);
-        if (property != null) {
-            String name = property.name();
+        final Step classStep = element.getAnnotation(Step.class);
+        if (classStep != null) {
+            String name = classStep.name();
             if (Strings.isNullOrEmpty(name)) {
                 name = Introspector.decapitalize(element.getSimpleName().toString());
             }
-
             String javaTypeName = javaTypeName(element);
+            StepProperties classStepProperties = new StepProperties(name, javaTypeName, classStep);
 
             Map<String, ExecutableElement> methods = findAllStepMethods(element);
             Set<Map.Entry<String, ExecutableElement>> entries = methods.entrySet();
@@ -98,14 +98,14 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
                 String functionName = name;
                 boolean isApplyFunctionMethod = methodName.equals("apply") &&
                         hasInterface(element, "java.util.function.Function") && methodElement.getParameters().size() == 1;
+                boolean isCallable = methodName.equals("call") && hasInterface(element, "java.util.concurrent.Callable");
+                Element argumentsElement = methodElement;
                 Step step = methodElement.getAnnotation(Step.class);
                 if (step != null) {
                     String stepName = step.name();
                     if (Strings.isNullOrEmpty(stepName)) {
-                        // lets default to the method name if we are not
-                        // callable / function
-                        if ((methodName.equals("call") && hasInterface(element, "java.util.concurrent.Callable")) ||
-                                isApplyFunctionMethod) {
+                        // lets default to the method name if we are not callable / function
+                        if (isCallable || isApplyFunctionMethod) {
                             // lets not use the method name
                         } else {
                             stepName = methodName;
@@ -115,7 +115,8 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
                         functionName = stepName;
                     }
                 }
-                Element argumentsElement = methodElement;
+                StepProperties stepProperties = new StepProperties(classStepProperties, functionName, step);
+
                 if (isApplyFunctionMethod) {
                     Element variableElement = methodElement.getParameters().get(0);
                     TypeMirror typeMirror = variableElement.asType();
@@ -123,10 +124,12 @@ public class StepAnnotationProcessor extends AbstractAnnotationProcessor {
                         DeclaredType parameterDeclaredType = (DeclaredType) typeMirror;
                         argumentsElement = parameterDeclaredType.asElement();
                     }
+                } else if (isCallable) {
+                    argumentsElement = element;
                 }
                 writeStepFile(argumentsElement, functionName);
 
-                properties.put(name, javaTypeName);
+                stepProperties.store(properties);
             }
         }
     }

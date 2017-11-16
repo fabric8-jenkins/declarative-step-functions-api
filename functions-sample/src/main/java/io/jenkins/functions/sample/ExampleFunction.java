@@ -21,7 +21,7 @@ import io.jenkins.functions.Step;
 
 import java.util.function.Function;
 
-@Step(name = "example")
+@Step(name = "example", displayName = "Some example function")
 public class ExampleFunction extends BaseFunction implements Function<ExampleFunction.Context, Result> {
 
 
