@@ -16,7 +16,7 @@
 package io.jenkins.functions.step;
 
 import hudson.Extension;
-import io.jenkins.functions.loader.StepFunction;
+import io.jenkins.functions.runtime.StepFunction;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
 

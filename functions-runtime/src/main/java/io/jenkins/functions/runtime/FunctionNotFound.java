@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader;
-
-import java.util.Map;
+package io.jenkins.functions.runtime;
 
 /**
- * Java interface for working with Java step function implementations
+ * Thrown if a function cannot be found
  */
-public interface StepFunction {
-    /**
-     * Invoke the step function passing in the given arguments
-     *
-     * @param arguments optional arguments by name
-     * @param context
-     * @return the result of the step function
-     */
-    Object invoke(Map<String, Object> arguments, FunctionContext context);
+public class FunctionNotFound extends Exception {
+    private final String functionName;
 
-    /**
-     * Returns the metadata for the step function
-     */
-    StepMetadata getMetadata();
+    public FunctionNotFound(String functionName) {
+        super("No function called " + functionName + " could be found");
+        this.functionName = functionName;
+    }
+
+    public String getFunctionName() {
+        return functionName;
+    }
 }

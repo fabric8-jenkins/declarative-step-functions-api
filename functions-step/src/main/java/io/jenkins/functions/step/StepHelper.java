@@ -18,8 +18,8 @@ package io.jenkins.functions.step;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 import io.jenkins.functions.Logger;
-import io.jenkins.functions.loader.FunctionContext;
-import io.jenkins.functions.loader.StepFunction;
+import io.jenkins.functions.runtime.FunctionContext;
+import io.jenkins.functions.runtime.StepFunction;
 import io.jenkins.functions.support.DefaultLogger;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 

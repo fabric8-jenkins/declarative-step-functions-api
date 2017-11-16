@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader;
+package io.jenkins.functions.runtime;
 
 import io.jenkins.functions.Step;
-import io.jenkins.functions.loader.helpers.Strings;
-import io.jenkins.functions.loader.support.ArgumentsStepFunction;
-import io.jenkins.functions.loader.support.CallableStepFunction;
-import io.jenkins.functions.loader.support.MethodStepFunction;
+import io.jenkins.functions.runtime.helpers.Strings;
+import io.jenkins.functions.runtime.support.ArgumentsStepFunction;
+import io.jenkins.functions.runtime.support.CallableStepFunction;
+import io.jenkins.functions.runtime.support.MethodStepFunction;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static io.jenkins.functions.loader.helpers.Strings.notEmpty;
+import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
 
 /**
  * Helper functions for invoking functions from the classpath

@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader;
+package io.jenkins.functions.runtime;
 
 /**
- * Thrown if a function cannot be found
+ * Thrown if a function cannot be found for a given class
  */
-public class FunctionNotFound extends Exception {
+public class FunctionNotFoundForClass extends RuntimeException {
     private final String functionName;
+    private final Class<?> functionClass;
 
-    public FunctionNotFound(String functionName) {
-        super("No function called " + functionName + " could be found");
+    public FunctionNotFoundForClass(String functionName, Class<?> functionClass) {
+        super("No function called " + functionName + " could be found for class " + functionClass.getName());
         this.functionName = functionName;
+        this.functionClass = functionClass;
     }
 
     public String getFunctionName() {
         return functionName;
+    }
+
+    public Class<?> getFunctionClass() {
+        return functionClass;
     }
 }

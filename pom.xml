@@ -173,7 +173,7 @@
   <modules>
     <module>functions-api</module>
     <module>functions-apt</module>
-    <module>functions-loader</module>
+    <module>functions-runtime</module>
     <module>functions-step</module>
     <module>functions-sample</module>
     <module>functions-maven-plugin</module>

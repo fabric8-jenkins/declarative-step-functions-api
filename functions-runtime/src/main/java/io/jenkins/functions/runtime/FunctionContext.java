@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader;
+package io.jenkins.functions.runtime;
 
 import io.jenkins.functions.Logger;
 import io.jenkins.functions.support.DefaultLogger;

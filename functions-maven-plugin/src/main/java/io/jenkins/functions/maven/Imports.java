@@ -15,11 +15,9 @@
  */
 package io.jenkins.functions.maven;
 
-import io.jenkins.functions.loader.helpers.Strings;
+import io.jenkins.functions.runtime.helpers.Strings;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;

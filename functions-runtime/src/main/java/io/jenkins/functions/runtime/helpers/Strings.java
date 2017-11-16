@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader.helpers;
+package io.jenkins.functions.runtime.helpers;
 
 /**
  * Some String helper methods

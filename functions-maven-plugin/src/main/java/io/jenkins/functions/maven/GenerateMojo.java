@@ -15,10 +15,10 @@
  */
 package io.jenkins.functions.maven;
 
-import io.jenkins.functions.loader.ArgumentMetadata;
-import io.jenkins.functions.loader.StepFunction;
-import io.jenkins.functions.loader.StepFunctions;
-import io.jenkins.functions.loader.StepMetadata;
+import io.jenkins.functions.runtime.ArgumentMetadata;
+import io.jenkins.functions.runtime.StepFunction;
+import io.jenkins.functions.runtime.StepFunctions;
+import io.jenkins.functions.runtime.StepMetadata;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -36,11 +36,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-import static io.jenkins.functions.loader.helpers.Strings.capitalise;
-import static io.jenkins.functions.loader.helpers.Strings.notEmpty;
+import static io.jenkins.functions.runtime.helpers.Strings.capitalise;
+import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
 
 /**
  */

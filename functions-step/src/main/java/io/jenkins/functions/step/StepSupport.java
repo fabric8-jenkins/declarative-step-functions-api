@@ -17,8 +17,8 @@ package io.jenkins.functions.step;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.TaskListener;
-import io.jenkins.functions.loader.StepFunction;
-import io.jenkins.functions.loader.StepFunctions;
+import io.jenkins.functions.runtime.StepFunction;
+import io.jenkins.functions.runtime.StepFunctions;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.jenkins.functions.loader.support;
+package io.jenkins.functions.runtime.support;
 
 import io.jenkins.functions.Step;
-import io.jenkins.functions.loader.FunctionContext;
-import io.jenkins.functions.loader.StepMetadata;
+import io.jenkins.functions.runtime.FunctionContext;
+import io.jenkins.functions.runtime.StepMetadata;
 import org.apache.commons.beanutils.PropertyUtils;
 
 import java.lang.reflect.InvocationTargetException;
