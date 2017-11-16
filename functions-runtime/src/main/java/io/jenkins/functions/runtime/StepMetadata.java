@@ -46,7 +46,7 @@ public class StepMetadata {
 
     @Override
     public String toString() {
-        return "StepMetadata{" + name + Arrays.toString(argumentMetadata) + " returnType: " + returnType + "}";
+        return "StepMetadata{" + getPrototype() + "}";
     }
 
     public String getName() {
@@ -81,14 +81,18 @@ public class StepMetadata {
         builder.append("(");
         if (argumentMetadata != null) {
             int count = 0;
-            for (ArgumentMetadata parameterInfo : argumentMetadata) {
+            for (ArgumentMetadata metadata : argumentMetadata) {
                 if (count++ > 0) {
                     builder.append(", ");
                 }
-                builder.append(parameterInfo.getPrototype());
+                builder.append(metadata.getPrototype());
             }
         }
         builder.append(")");
+        if (returnType != null) {
+            builder.append(" ");
+            builder.append(returnType.getName());
+        }
         return builder.toString();
     }
 

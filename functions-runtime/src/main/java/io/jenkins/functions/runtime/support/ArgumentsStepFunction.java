@@ -39,11 +39,6 @@ public class ArgumentsStepFunction extends StepFunctionSupport {
         this.contextType = applyMethod.getParameterTypes()[0];
     }
 
-    @Override
-    public String toString() {
-        return "ArgumentsStepFunction{" + getName() + "}";
-    }
-
     protected Object invokeOnInstance(Map<String, Object> arguments, FunctionContext functionContext, Object object) {
         Object argumentObject = null;
         if (Map.class.isAssignableFrom(contextType)) {

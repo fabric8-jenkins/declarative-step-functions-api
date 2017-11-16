@@ -19,6 +19,7 @@ import io.jenkins.functions.Logger;
 import io.jenkins.functions.runtime.FunctionContext;
 import io.jenkins.functions.runtime.StepFunction;
 import io.jenkins.functions.runtime.StepMetadata;
+import io.jenkins.functions.runtime.helpers.Strings;
 import org.apache.commons.beanutils.PropertyUtils;
 
 import java.io.File;
@@ -35,6 +36,21 @@ public abstract class StepFunctionSupport implements StepFunction {
         this.name = name;
         this.clazz = clazz;
         this.metadata = metadata;
+    }
+
+    @Override
+    public String toString() {
+        String className = "";
+        if (metadata != null) {
+            Class<?> clazz = metadata.getImplementationClass();
+            if (clazz != null) {
+                className = clazz.getName();
+            }
+        }
+        if (Strings.notEmpty(className)) {
+            className += "::";
+        }
+        return getClass().getSimpleName() + "{" + className + getName() + "()}";
     }
 
     @Override
@@ -80,4 +96,5 @@ public abstract class StepFunctionSupport implements StepFunction {
     public String getName() {
         return getMetadata().getName();
     }
+
 }

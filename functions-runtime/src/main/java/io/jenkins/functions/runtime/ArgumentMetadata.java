@@ -80,8 +80,8 @@ public class ArgumentMetadata {
      */
     public String getPrototype() {
         StringBuilder builder = new StringBuilder();
-        if (type != null) {
-            builder.append(type.getName());
+        if (Strings.notEmpty(typeName)) {
+            builder.append(typeName);
         }
         if (name != null && name.length() > 0) {
             if (builder.length() > 0) {

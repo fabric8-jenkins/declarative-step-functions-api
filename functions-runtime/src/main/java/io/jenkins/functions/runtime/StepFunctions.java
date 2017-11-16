@@ -17,6 +17,7 @@ package io.jenkins.functions.runtime;
 
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
+import io.jenkins.functions.runtime.helpers.PrimitiveTypes;
 import io.jenkins.functions.runtime.helpers.Strings;
 import io.jenkins.functions.runtime.support.ArgumentsStepFunction;
 import io.jenkins.functions.runtime.support.CallableStepFunction;
@@ -301,13 +302,16 @@ public class StepFunctions {
             if (Strings.isNullOrEmpty(typeName)) {
                 return null;
             }
-            Class<?> clazz = null;
-            try {
-                clazz = classLoader.loadClass(typeName);
-            } catch (ClassNotFoundException e) {
-                System.out.println("WARNING: failed to load " + typeName + " on ClassLoader " + classLoader);
+            String className = Strings.removeGenericsFromClassName(typeName);
+            Class<?> clazz = PrimitiveTypes.getClass(className);
+            if (clazz == null) {
+                try {
+                    clazz = classLoader.loadClass(className);
+                } catch (ClassNotFoundException e) {
+                    System.out.println("WARNING: failed to load " + className + " on ClassLoader " + classLoader);
+                }
             }
-            return new ArgumentMetadata(attributeName, displayName, description, clazz, typeName);
+            return new ArgumentMetadata(attributeName, displayName, description, clazz, className);
         }
 
 

@@ -19,6 +19,7 @@ import io.jenkins.functions.runtime.ArgumentMetadata;
 import io.jenkins.functions.runtime.StepFunction;
 import io.jenkins.functions.runtime.StepFunctions;
 import io.jenkins.functions.runtime.StepMetadata;
+import io.jenkins.functions.runtime.helpers.Strings;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -116,7 +117,7 @@ public class GenerateMojo extends AbstractMojo {
                 String propertyName = capitalise(argumentName);
                 String typeName = imports.simpleName(argument.getTypeName());
                 attributesWriter.write("    public " + typeName + " get" + propertyName + "() {\n" +
-                        "        return getArgument(\"" + argumentName + "\", " + removeGenerics(typeName) + ".class);\n" +
+                        "        return getArgument(\"" + argumentName + "\", " + Strings.removeGenericsFromClassName(typeName) + ".class);\n" +
                         "    }\n" +
                         "\n" +
                         "    @DataBoundSetter\n" +
@@ -183,15 +184,5 @@ public class GenerateMojo extends AbstractMojo {
         }
     }
 
-    /**
-     * Returns the type name without the generics postfix
-     */
-    private String removeGenerics(String typeName) {
-        int idx = typeName.indexOf('<');
-        if (idx > 0) {
-            return typeName.substring(0, idx);
-        }
-        return typeName;
-    }
 }
 

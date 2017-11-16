@@ -38,4 +38,15 @@ public final class Strings {
     public static String capitalise(String name) {
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
+
+    /**
+     * Returns the type name without the generics postfix
+     */
+    public static String removeGenericsFromClassName(String typeName) {
+        int idx = typeName.indexOf('<');
+        if (idx > 0) {
+            return typeName.substring(0, idx);
+        }
+        return typeName;
+    }
 }
