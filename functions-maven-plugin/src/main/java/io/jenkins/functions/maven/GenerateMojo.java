@@ -1,12 +1,12 @@
 /**
  * Copyright (C) Original Authors 2017
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,8 +52,14 @@ public class GenerateMojo extends AbstractMojo {
     /**
      * The generation output directory
      */
-    @Parameter(property = "fabric8.workDir", defaultValue = "${project.build.directory}/generated-sources")
+    @Parameter(property = "jenkins.functions.workDir", defaultValue = "${project.build.directory}/generated-sources")
     private File outputDir;
+
+    /**
+     * The generation output directory
+     */
+    @Parameter(property = "jenkins.functions.workDir", defaultValue = "${project.build.directory}/classes")
+    private File jellyOutputDir;
 
 
     @Override
@@ -91,12 +97,19 @@ public class GenerateMojo extends AbstractMojo {
             stepClassName += "Wrapper";
         }
 
+        File jellyDir = jellyOutputDir;
         File packageDir = outputDir;
+        String packagePath = "";
         if (notEmpty(packageName)) {
-            String packagePath = packageName.replace('.', File.separatorChar);
+            packagePath = packageName.replace('.', File.separatorChar);
             packageDir = new File(outputDir, packagePath);
+            jellyDir = new File(jellyOutputDir, packagePath);
         }
         packageDir.mkdirs();
+
+        generateJelly(new File(jellyDir, stepClassName + File.separator + "config.jelly"), function);
+
+
         Imports imports = new Imports();
         imports.addImports("hudson.Extension",
                 "io.jenkins.functions.step.StepSupport",
@@ -184,5 +197,34 @@ public class GenerateMojo extends AbstractMojo {
         }
     }
 
+    private void generateJelly(File file, StepFunction function) throws IOException {
+        StepMetadata metadata = function.getMetadata();
+        ArgumentMetadata[] argumentMetadata = metadata.getArgumentMetadata();
+        if (argumentMetadata != null && argumentMetadata.length > 0) {
+            file.getParentFile().mkdirs();
+            try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
+                writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<?jelly escape-by-default='true'?>\n" +
+                        "<j:jelly xmlns:j=\"jelly:core\" xmlns:f=\"/lib/form\">");
+
+                for (ArgumentMetadata argMetadata : argumentMetadata) {
+                    String name = argMetadata.getName();
+                    String displayName = argMetadata.getDisplayName();
+                    if (Strings.isNullOrEmpty(displayName)) {
+                        displayName = name;
+                    }
+                    // TODO generate different widgets based on types and annotations / metadata
+                    String widget = "<f:textbox/>";
+                    writer.println("    <f:entry field=\"" + name + "\" title=\"" + displayName + "\">\n" +
+                            "        " + widget + "\n" +
+                            "    </f:entry>");
+                }
+                writer.println("    <f:entry field=\"artifactIdToWaitFor\" title=\"ArtifactId To Wait For\">\n" +
+                        "        <f:textbox/>\n" +
+                        "    </f:entry>\n" +
+                        "</j:jelly>");
+            }
+        }
+    }
 }
 
