@@ -65,6 +65,12 @@ public class GenerateMojo extends AbstractMojo {
                 generateStepClass(function);
             }
             getLog().info("Generated " + map.size() + " Step classes for the found declarative step functions");
+
+            // TODO should we generate this from the relative folder?
+            String generatedSourceRoot = "target/generated-sources";
+            if (!project.getCompileSourceRoots().contains(generatedSourceRoot)) {
+                project.getCompileSourceRoots().add(generatedSourceRoot);
+            }
         } catch (Exception e) {
             throw new MojoExecutionException("Failed to generate step classes due to: " + e, e);
         }
@@ -87,9 +93,12 @@ public class GenerateMojo extends AbstractMojo {
         packageDir.mkdirs();
         Imports imports = new Imports();
         imports.addImports("hudson.Extension",
-                "io.jenkins.functions.loader.StepFunction",
+                "io.jenkins.functions.step.StepSupport",
+                "io.jenkins.functions.runtime.StepFunction",
                 "org.jenkinsci.plugins.workflow.steps.StepContext",
                 "org.jenkinsci.plugins.workflow.steps.StepExecution",
+                "org.kohsuke.stapler.DataBoundConstructor",
+                "org.kohsuke.stapler.DataBoundSetter",
                 "java.util.Map");
 
         StringWriter attributesWriter = new StringWriter();
