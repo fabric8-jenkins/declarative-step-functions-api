@@ -20,11 +20,10 @@ import io.jenkins.functions.runtime.FunctionContext;
 import io.jenkins.functions.runtime.StepFunction;
 import io.jenkins.functions.runtime.StepMetadata;
 import io.jenkins.functions.runtime.helpers.Strings;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 
+import java.beans.PropertyDescriptor;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,7 +70,15 @@ public abstract class StepFunctionSupport implements StepFunction {
 
     protected Map<String, Object> getAllArguments(Object allArguments) {
         try {
-            return PropertyUtils.describe(allArguments);
+            Map<String, Object> answer = new HashMap<>();
+            final PropertyDescriptor[] descriptors = PropertyUtils.getPropertyDescriptors(allArguments);
+            for (PropertyDescriptor descriptor : descriptors) {
+                final String name = descriptor.getName();
+                if (descriptor.getReadMethod() != null && descriptor.getWriteMethod() != null) {
+                    answer.put(name, PropertyUtils.getProperty(allArguments, name));
+                }
+            }
+            return answer;
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not get properties on bean " + allArguments + ". " + e, e);
         }
