@@ -100,15 +100,15 @@ public abstract class StepFunctionSupport implements StepFunction {
     protected void injectContext(Object object, FunctionContext context) {
         Logger logger = context.getLogger();
         if (logger != null) {
-            setBeanPropertty(object, "logger", logger);
+            setBeanProperty(object, "logger", logger);
         }
         File currentDir = context.getCurrentDir();
         if (currentDir != null) {
-            setBeanPropertty(object, "currentDir", currentDir);
+            setBeanProperty(object, "currentDir", currentDir);
         }
     }
 
-    protected void setBeanPropertty(Object object, String name, Object value) {
+    protected void setBeanProperty(Object object, String name, Object value) {
         try {
             PropertyUtils.setProperty(object, name, value);
         } catch (Exception e) {

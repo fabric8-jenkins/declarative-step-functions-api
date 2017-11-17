@@ -35,8 +35,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.jenkins.functions</groupId>
-      <artifactId>functions-runtime</artifactId>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>${commons-beanutils.version}</version>
     </dependency>
 
     <dependency>
@@ -49,39 +50,10 @@
       <artifactId>maven-core</artifactId>
     </dependency>
 
-    <!--
-
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-artifact</artifactId>
-    </dependency>
-
-     <dependency>
-       <groupId>org.apache.maven</groupId>
-       <artifactId>maven-compat</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-component-annotations</artifactId>
-    </dependency>
--->
-
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
     </dependency>
-
 
     <!-- testing -->
     <dependency>

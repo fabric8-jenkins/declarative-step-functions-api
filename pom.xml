@@ -63,6 +63,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
 
     <aether.version>1.0.2.v20150114</aether.version>
+    <commons-beanutils.version>1.9.3</commons-beanutils.version>
     <fabric8.version>2.2.95</fabric8.version>
     <jenkins-core.version>2.7.3</jenkins-core.version>
     <workflow-step-api-plugin.version>2.13</workflow-step-api-plugin.version>

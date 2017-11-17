@@ -15,11 +15,7 @@
  */
 package io.jenkins.functions.maven;
 
-import io.jenkins.functions.runtime.ArgumentMetadata;
-import io.jenkins.functions.runtime.StepFunction;
-import io.jenkins.functions.runtime.StepFunctions;
-import io.jenkins.functions.runtime.StepMetadata;
-import io.jenkins.functions.runtime.helpers.Strings;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -29,18 +25,12 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URLClassLoader;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
-
-import static io.jenkins.functions.runtime.helpers.Strings.capitalise;
-import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
 
 /**
  */
@@ -67,180 +57,66 @@ public class GenerateMojo extends AbstractMojo {
         URLClassLoader classLoader = MavenHelper.getCompileClassLoader(project);
         // TODO allow them to be filtered?
         try {
-            Map<String, StepFunction> map = StepFunctions.loadStepFunctions(classLoader);
-            for (StepFunction function : map.values()) {
-                generateStepClass(function);
-            }
+            Map map = generate(classLoader);
+
             getLog().info("Generated " + map.size() + " Step classes for the found declarative step functions");
 
-            // TODO should we generate this from the relative folder?
-            String generatedSourceRoot = "target/generated-sources";
-            if (!project.getCompileSourceRoots().contains(generatedSourceRoot)) {
-                project.getCompileSourceRoots().add(generatedSourceRoot);
-            }
         } catch (Exception e) {
             throw new MojoExecutionException("Failed to generate step classes due to: " + e, e);
         }
-    }
 
-    protected void generateStepClass(StepFunction function) throws IOException {
-        StepMetadata metadata = function.getMetadata();
-        Class<?> implementationClass = metadata.getImplementationClass();
-        String packageName = implementationClass.getPackage().getName();
-        String name = metadata.getName();
-        String displayName = metadata.getDisplayName();
-        ArgumentMetadata[] argumentMetadata = metadata.getArgumentMetadata();
-        String stepClassName = capitalise(name) + "Step";
-
-        // lets make sure the generated step class doesn't clash with the step implementation class name
-        if (implementationClass.getSimpleName().equals(stepClassName)) {
-            stepClassName += "Wrapper";
-        }
-
-        File jellyDir = jellyOutputDir;
-        File packageDir = outputDir;
-        String packagePath = "";
-        if (notEmpty(packageName)) {
-            packagePath = packageName.replace('.', File.separatorChar);
-            packageDir = new File(outputDir, packagePath);
-            jellyDir = new File(jellyOutputDir, packagePath);
-        }
-        packageDir.mkdirs();
-
-        generateJelly(new File(jellyDir, stepClassName + File.separator + "config.jelly"), function);
-
-
-        Imports imports = new Imports();
-        imports.addImports("hudson.Extension",
-                "io.jenkins.functions.step.StepSupport",
-                "io.jenkins.functions.runtime.StepFunction",
-                "org.jenkinsci.plugins.workflow.steps.StepContext",
-                "org.jenkinsci.plugins.workflow.steps.StepExecution",
-                "org.kohsuke.stapler.DataBoundConstructor",
-                "org.kohsuke.stapler.DataBoundSetter",
-                "java.util.Map");
-
-        StringWriter attributesWriter = new StringWriter();
-
-        if (argumentMetadata != null && argumentMetadata.length > 0) {
-            attributesWriter.write("\n    // Argument properties\n\n");
-
-            for (ArgumentMetadata argument : argumentMetadata) {
-                String argumentName = argument.getName();
-                String propertyName = capitalise(argumentName);
-                String typeName = imports.simpleName(argument.getTypeName());
-                String getPrefix = "get";
-                if (typeName.equals("boolean")) {
-                    getPrefix = "is";
-                }
-                attributesWriter.write("    public " + typeName + " " + getPrefix + propertyName + "() {\n" +
-                        "        return getArgument(\"" + argumentName + "\", " + Strings.removeGenericsFromClassName(typeName) + ".class);\n" +
-                        "    }\n" +
-                        "\n" +
-                        "    @DataBoundSetter\n" +
-                        "    public void set" + propertyName + "(" + typeName + " value) {\n" +
-                        "        setArgument(\"" + argumentName + "\", value);\n" +
-                        "    }\n" +
-                        "\n\n");
-            }
-        }
-
-
-        File outputFile = new File(packageDir, stepClassName + ".java");
-        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)))) {
-            writer.println("/**\n" +
-                    " * NOTE DO NOT EDIT THIS FILE!\n" +
-                    " *\n" +
-                    " * Generated by the functions-maven-plugin\n" +
-                    " */");
-            if (notEmpty(packageName)) {
-                writer.println("package " + packageName + ";");
-            }
-
-            Collection<String> importList = imports.getImportList();
-            if (!importList.isEmpty()) {
-                writer.println();
-                for (String importClass : importList) {
-                    writer.println("import " + importClass + ";");
-                }
-            }
-            writer.println("\n" +
-                    "/**\n" +
-                    " * This class exposes the declarative step function as a reusable step in scripted and declarative pipelines\n" +
-                    " */\n" +
-                    "public class " + stepClassName + " extends StepSupport {\n" +
-                    "    public static final String STEP_FUNCTION_NAME = \"" + name + "\";\n" +
-                    "    public static final String STEP_DISPLAY_NAME = \"" + displayName + "\";\n" +
-                    "\n" +
-                    "    @DataBoundConstructor\n" +
-                    "    public " + stepClassName + "() {\n" +
-                    "        super(STEP_FUNCTION_NAME, " + implementationClass.getSimpleName() + ".class);\n" +
-                    "    }");
-
-            writer.print(attributesWriter.toString());
-
-            writer.println("\n" +
-                    "    @Override\n" +
-                    "    public StepExecution start(StepContext context) throws Exception {\n" +
-                    "        return new ExecutionSupport(function(), arguments(), context);\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @Extension\n" +
-                    "    public static class DescriptorImpl extends DescriptorSupport {\n" +
-                    "        public DescriptorImpl() {\n" +
-                    "            super(STEP_FUNCTION_NAME, STEP_DISPLAY_NAME);\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public static class Execution extends ExecutionSupport<Void> {\n" +
-                    "        public Execution(StepFunction function, Map<String, Object> arguments, StepContext context) {\n" +
-                    "            super(function, arguments, context);\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}\n");
+        // TODO should we generate this from the relative folder?
+        String generatedSourceRoot = "target/generated-sources";
+        if (!project.getCompileSourceRoots().contains(generatedSourceRoot)) {
+            project.getCompileSourceRoots().add(generatedSourceRoot);
         }
     }
 
-    private void generateJelly(File file, StepFunction function) throws IOException {
-        StepMetadata metadata = function.getMetadata();
-        ArgumentMetadata[] argumentMetadata = metadata.getArgumentMetadata();
-        if (argumentMetadata != null && argumentMetadata.length > 0) {
-            file.getParentFile().mkdirs();
-            try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
-                writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<?jelly escape-by-default='true'?>\n" +
-                        "<j:jelly xmlns:j=\"jelly:core\" xmlns:f=\"/lib/form\">");
-
-                for (ArgumentMetadata argMetadata : argumentMetadata) {
-                    String name = argMetadata.getName();
-                    String displayName = argMetadata.getDisplayName();
-                    if (Strings.isNullOrEmpty(displayName)) {
-                        displayName = name;
-                    }
-                    // TODO generate different widgets based on types and annotations / metadata
-                    String widget = "<f:textbox value=\"${it." + name + "}\" default=\"${it." + name + "}\"/>";
-                    String typeName = argMetadata.getTypeName();
-                    if (Strings.notEmpty(typeName)) {
-                        String shortTypeName = Strings.removeGenericsFromClassName(typeName);
-                        if (shortTypeName.equals("boolean") || shortTypeName.equals("java.lang.Boolean")) {
-                            widget = "<f:checkbox value=\"${it." + name + "}\" default=\"${it." + name + "}\"/>";
-                        } else {
-                            Class<?> type = argMetadata.getType();
-                            if (type != null) {
-                                if (Iterable.class.isAssignableFrom(type)) {
-                                    getLog().info("Ignoring iterable argument for now " + typeName + " for attribute " + name + " on " + metadata.getName());
-                                    continue;
-                                }
-                            }
-                        }
-                        writer.println("    <f:entry field=\"" + name + "\" title=\"" + displayName + "\">\n" +
-                                "        " + widget + "\n" +
-                                "    </f:entry>");
-                    }
-                }
-                writer.println("</j:jelly>");
+    protected Map generate(URLClassLoader classLoader) throws MojoExecutionException {
+        // lets use class loader to find the generator to avoid class loader complications of multiple
+        // APIs and runtimes on the plugin or compile classpaths
+        String className = "io.jenkins.functions.runtime.generator.StepAndJellyGenerator";
+        Class<?> clazz = null;
+        try {
+            clazz = classLoader.loadClass(className);
+        } catch (ClassNotFoundException e) {
+            throw new MojoExecutionException("Failed to find class " + className + "" +
+                    " on the compile classloader to generate the Steps and Jelly. Do you have the functions-runtime jar on the <dependencies>? Got: " + e, e);
+        }
+        Object generator;
+        try {
+            generator = clazz.newInstance();
+        } catch (Exception e) {
+            throw new MojoExecutionException("Failed to instantiate class " + clazz.getName() + " due to: " + e, e);
+        }
+        try {
+            PropertyUtils.setProperty(generator, "outputDir", outputDir);
+            PropertyUtils.setProperty(generator, "jellyOutputDir", jellyOutputDir);
+        } catch (Exception e) {
+            throw new MojoExecutionException("Failed to configure " + generator + " as a class " + clazz.getName() + " due to: " + e, e);
+        }
+        Method generateMethod;
+        try {
+            generateMethod = clazz.getMethod("generate", ClassLoader.class);
+        } catch (NoSuchMethodException e) {
+            throw new MojoExecutionException("Failed to find generate(ClassLoader) method on class " + clazz.getName() + " due to: " + e, e);
+        }
+        try {
+            Object[] args = { classLoader };
+            Object answer = generateMethod.invoke(generator, args);
+            if (answer instanceof Map) {
+                return (Map) answer;
+            } else {
+                getLog().warn("Returned " + answer + " which is not a Map!");
+                return Collections.emptyMap();
             }
+        } catch (IllegalAccessException e) {
+            throw new MojoExecutionException("Failed to invoke generator " + e, e);
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getTargetException();
+            throw new MojoExecutionException("Failed to invoke generator " + t, t);
         }
     }
+
 }
 
