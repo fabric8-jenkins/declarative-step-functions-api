@@ -20,9 +20,12 @@ import io.jenkins.functions.runtime.FunctionContext;
 import io.jenkins.functions.runtime.StepFunction;
 import io.jenkins.functions.runtime.StepMetadata;
 import io.jenkins.functions.runtime.helpers.Strings;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -55,6 +58,26 @@ public abstract class StepFunctionSupport implements StepFunction {
 
     @Override
     public Object invoke(Map<String, Object> arguments, FunctionContext context) {
+        Object object = createFunctionObject(context);
+        return invokeOnInstance(arguments, context, object);
+    }
+
+    @Override
+    public Map<String, Object> getArguments(Map<String, Object> arguments, FunctionContext context) {
+        Object object = createFunctionObject(context);
+        Object allArguments = createArgumentsObject(object, arguments);
+        return getAllArguments(allArguments);
+    }
+
+    protected Map<String, Object> getAllArguments(Object allArguments) {
+        try {
+            return PropertyUtils.describe(allArguments);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Could not get properties on bean " + allArguments + ". " + e, e);
+        }
+    }
+
+    protected Object createFunctionObject(FunctionContext context) {
         Object object;
         try {
             object = clazz.newInstance();
@@ -64,7 +87,7 @@ public abstract class StepFunctionSupport implements StepFunction {
             throw new IllegalArgumentException("Could not instantiate class " + clazz.getName() + " due to: " + e, e);
         }
         injectContext(object, context);
-        return invokeOnInstance(arguments, context, object);
+        return object;
     }
 
     protected void injectContext(Object object, FunctionContext context) {
@@ -87,6 +110,8 @@ public abstract class StepFunctionSupport implements StepFunction {
     }
 
     protected abstract Object invokeOnInstance(Map<String, Object> arguments, FunctionContext context, Object object);
+
+    protected abstract Object createArgumentsObject(Object object, Map<String, Object> arguments);
 
     @Override
     public StepMetadata getMetadata() {

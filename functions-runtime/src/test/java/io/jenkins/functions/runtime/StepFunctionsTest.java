@@ -77,6 +77,10 @@ public class StepFunctionsTest {
         Object result = function.invoke(arguments, functionContext);
         System.out.println("Invoked " + function + " with result: " + result);
         assertThat(result).isEqualTo(Result.SUCCESS);
+
+        Map<String, Object> defaultArguments = function.getArguments(new HashMap<>(), functionContext);
+        assertThat(defaultArguments).describedAs("Default arguments").isNotEmpty();
+        assertThat(defaultArguments.get("message")).describedAs("defaultArguments.message").isEqualTo("DefaultMessage");
     }
 
     @Test
@@ -88,6 +92,10 @@ public class StepFunctionsTest {
         Object result = function.invoke(arguments, functionContext);
         System.out.println("Invoked " + function + " with result: " + result);
         assertThat(result).isEqualTo("Hello James");
+
+        Map<String, Object> defaultArguments = function.getArguments(new HashMap<>(), functionContext);
+        assertThat(defaultArguments).describedAs("Default arguments").isNotEmpty();
+        assertThat(defaultArguments.get("name")).describedAs("defaultArguments.name").isEqualTo("DefaultName");
     }
 
     @Test

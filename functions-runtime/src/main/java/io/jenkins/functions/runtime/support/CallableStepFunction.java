@@ -38,6 +38,18 @@ public class CallableStepFunction extends StepFunctionSupport {
     }
 
     protected Object invokeOnInstance(Map<String, Object> arguments, FunctionContext context, Object object) {
+        createArgumentsObject(object, arguments);
+        try {
+            return method.invoke(object);
+        } catch (IllegalAccessException e) {
+            throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
+        }
+    }
+
+    @Override
+    protected Object createArgumentsObject(Object object, Map<String, Object> arguments) {
         if (arguments != null) {
             Set<Map.Entry<String, Object>> entries = arguments.entrySet();
             for (Map.Entry<String, Object> entry : entries) {
@@ -50,13 +62,6 @@ public class CallableStepFunction extends StepFunctionSupport {
                 }
             }
         }
-
-        try {
-            return method.invoke(object);
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
-        }
+        return object;
     }
 }

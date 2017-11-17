@@ -72,4 +72,10 @@ public class MethodStepFunction extends StepFunctionSupport {
             throw new IllegalArgumentException("Could not invoke " + method + " due to: " + e, e);
         }
     }
+
+    @Override
+    protected Object createArgumentsObject(Object object, Map<String, Object> arguments) {
+        // TODO
+        return object;
+    }
 }

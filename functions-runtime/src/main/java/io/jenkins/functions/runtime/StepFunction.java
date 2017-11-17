@@ -31,6 +31,12 @@ public interface StepFunction {
     Object invoke(Map<String, Object> arguments, FunctionContext context);
 
     /**
+     * Returns all the current arguments with defaults for the function after applying the given
+     * arguments
+     */
+    Map<String, Object> getArguments(Map<String, Object> arguments, FunctionContext context);
+
+    /**
      * Returns the metadata for the step function
      */
     StepMetadata getMetadata();

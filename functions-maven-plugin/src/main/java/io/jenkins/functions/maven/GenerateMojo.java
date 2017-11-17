@@ -214,15 +214,27 @@ public class GenerateMojo extends AbstractMojo {
                         displayName = name;
                     }
                     // TODO generate different widgets based on types and annotations / metadata
-                    String widget = "<f:textbox/>";
-                    writer.println("    <f:entry field=\"" + name + "\" title=\"" + displayName + "\">\n" +
-                            "        " + widget + "\n" +
-                            "    </f:entry>");
+                    String widget = "<f:textbox value=\"${it." + name + "}\" default=\"${it." + name + "}\"/>";
+                    String typeName = argMetadata.getTypeName();
+                    if (Strings.notEmpty(typeName)) {
+                        String shortTypeName = Strings.removeGenericsFromClassName(typeName);
+                        if (shortTypeName.equals("boolean") || shortTypeName.equals("java.lang.Boolean")) {
+                            widget = "<f:checkbox value=\"${it." + name + "}\" default=\"${it." + name + "}\"/>";
+                        } else {
+                            Class<?> type = argMetadata.getType();
+                            if (type != null) {
+                                if (Iterable.class.isAssignableFrom(type)) {
+                                    getLog().info("Ignoring iterable argument for now " + typeName + " for attribute " + name + " on " + metadata.getName());
+                                    continue;
+                                }
+                            }
+                        }
+                        writer.println("    <f:entry field=\"" + name + "\" title=\"" + displayName + "\">\n" +
+                                "        " + widget + "\n" +
+                                "    </f:entry>");
+                    }
                 }
-                writer.println("    <f:entry field=\"artifactIdToWaitFor\" title=\"ArtifactId To Wait For\">\n" +
-                        "        <f:textbox/>\n" +
-                        "    </f:entry>\n" +
-                        "</j:jelly>");
+                writer.println("</j:jelly>");
             }
         }
     }

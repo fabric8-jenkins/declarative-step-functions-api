@@ -54,4 +54,8 @@ public class StepHelper {
         FunctionContext functionContext = createFunctionContext(stepContext);
         return function.invoke(arguments, functionContext);
     }
+
+    public static Map<String, Object> getAllArguments(StepFunction function, Map<String, Object> arguments) {
+        return function.getArguments(arguments, new FunctionContext());
+    }
 }

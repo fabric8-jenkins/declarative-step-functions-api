@@ -41,7 +41,7 @@ public class ExampleFunction extends BaseFunction implements Function<ExampleFun
 
     public static class Context {
         @Argument
-        private String message;
+        private String message = "DefaultMessage";
 
         public String getMessage() {
             return message;

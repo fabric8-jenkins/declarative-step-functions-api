@@ -72,13 +72,11 @@ public abstract class StepSupport extends Step {
 
     protected <T> T getArgument(String argumentName, Class<T> clazz) {
         Object value = arguments.get(argumentName);
-        if (clazz.isInstance(value)) {
-            return (T) clazz.cast(value);
+        if (value == null && !clazz.isInstance(value)) {
+            Map<String,Object> allArguments = StepHelper.getAllArguments(function, arguments);
+            value = allArguments.get(argumentName);
         }
-        if (value != null) {
-            // TODO warn that value is of the wrong type?
-        }
-        return null;
+        return (T) value;
     }
 
     protected void setArgument(String argumentName, Object value) {

@@ -31,7 +31,7 @@ public class AnotherFunction extends BaseFunction implements Function<AnotherFun
 
     public static class Arguments {
         @Argument
-        private String name;
+        private String name = "DefaultName";
 
         public String getName() {
             return name;
