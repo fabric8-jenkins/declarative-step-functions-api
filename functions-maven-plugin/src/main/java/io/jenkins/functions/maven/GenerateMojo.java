@@ -129,7 +129,11 @@ public class GenerateMojo extends AbstractMojo {
                 String argumentName = argument.getName();
                 String propertyName = capitalise(argumentName);
                 String typeName = imports.simpleName(argument.getTypeName());
-                attributesWriter.write("    public " + typeName + " get" + propertyName + "() {\n" +
+                String getPrefix = "get";
+                if (typeName.equals("boolean")) {
+                    getPrefix = "is";
+                }
+                attributesWriter.write("    public " + typeName + " " + getPrefix + propertyName + "() {\n" +
                         "        return getArgument(\"" + argumentName + "\", " + Strings.removeGenericsFromClassName(typeName) + ".class);\n" +
                         "    }\n" +
                         "\n" +
