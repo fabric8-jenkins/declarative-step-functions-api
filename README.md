@@ -1,32 +1,14 @@
 ## Jenkins Declarative Step Functions
 
-This library provides a simple way to generate Declarative Pipeline Steps using Java POJOs.
+This library provides a simple way to generate Declarative Pipeline Steps using Java POJOs without users needing to know anything about Jenkins, Pipelines or Jelly.
 
-To use it just create a Java POJO which is annotated with `@Step` like this:
-
-```java
-@Step(name = "hello")
-public class HelloFunction implements Callable<String> {
-    @Argument
-    private String name;
-
-    @Override
-    public String call() throws Exception {
-        return "Hello " + name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-}
-```
-
-Or you can implement a `Function`
+To use it just create a Java POJO and a function which are both annotated with `@Step` like this:
  ```java
+import io.jenkins.functions.Argument;
+import io.jenkins.functions.Step;
+
+import java.util.function.Function;
+
 @Step(name = "example")
 public class ExampleFunction implements Function<ExampleFunction.Context, Result> {
 
@@ -64,7 +46,36 @@ public class ExampleFunction implements Function<ExampleFunction.Context, Result
 }
 ```
 
-Or you can just annotation a class with `@Step` and then annotate each method with `@Step` and each parameter with `@Argument`
+Or you can injection of the arguments onto the class and use a `Callable`:
+
+
+```java
+import io.jenkins.functions.Argument;
+import io.jenkins.functions.Step;
+
+import java.util.concurrent.Callable;
+
+@Step(name = "hello")
+public class HelloFunction implements Callable<String> {
+    @Argument
+    private String name;
+
+    @Override
+    public String call() throws Exception {
+        return "Hello " + name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+
+Or you can just annotation a class with `@Step` and then annotate each method with `@Step` and each parameter with `@Argument` and a name:
 
 ```java
 @Step
@@ -114,6 +125,36 @@ step {
 ``` 
 
 These Step functions can then be discovered on the classpath via the `StepFunctions` helper methods as it finds all of the generated `io/jenkins/functions/steps.properties` files on the classpath to then be able to find all the step classes.
+
+
+## Generating a Jenkins Plugin
+
+If you wan to turn your declarative step functions into a Jenkins Plugin so that your step scan be used inside scripted or declarative pipelines then add the following to your `pom.xml`
+
+```xml
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.jenkins.functions</groupId>
+        <artifactId>functions-maven-plugin</artifactId>
+        <version>${jenkins-functions.version}</version>
+        <executions>
+          <execution>
+            <id>generate</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <phase>generate-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+```
+
+This will then automatically generate the Step classes and `config.jelly` files so that your steps appear in the Jenkins Pipeline Syntax and Reference UIs along with working in the Blue Ocean Pipeline Editor.
+
+If you want to see an example plugin using this approach try the [fabric8-declarative-pipeline-step-functions-plugin](https://github.com/fabric8-jenkins/fabric8-declarative-pipeline-step-functions-plugin)
 
 ## Invoking a step function from the classpath
 
