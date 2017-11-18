@@ -62,13 +62,16 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
-    <aether.version>1.0.2.v20150114</aether.version>
     <commons-beanutils.version>1.9.3</commons-beanutils.version>
-    <fabric8.version>2.2.95</fabric8.version>
-    <jenkins-core.version>2.7.3</jenkins-core.version>
+
+    <!-- values from the pom.xml of org.jenkins-ci.plugins/plugin/3.0 -->
+    <jenkins-core.version>2.60.1</jenkins-core.version>
+    <!-- version that the above jenkins installs -->
     <workflow-step-api-plugin.version>2.13</workflow-step-api-plugin.version>
 
     <junit.version>4.12</junit.version>
+    <maven.version>3.3.1</maven.version>
+
     <!-- maven plugins -->
     <buildnumber.plugin.version>1.3</buildnumber.plugin.version>
     <docker.maven.plugin.version>0.13.8</docker.maven.plugin.version>
@@ -145,15 +148,6 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.fabric8</groupId>
-        <artifactId>fabric8-project-bom-full</artifactId>
-        <version>${fabric8.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-
-
-      <dependency>
         <groupId>io.jenkins.functions</groupId>
         <artifactId>functions-api</artifactId>
         <version>${project.version}</version>
@@ -167,6 +161,25 @@
         <groupId>io.jenkins.functions</groupId>
         <artifactId>functions-runtime</artifactId>
         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>1</version>
+      </dependency>
+
+
+      <!-- testing -->
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>3.8.0</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
