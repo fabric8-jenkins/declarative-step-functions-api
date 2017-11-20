@@ -135,8 +135,16 @@ pipeline {
 
 We would need the Step/Descriptor to expose the `StepCustomisation` POJOs so that the Blue Ocean UI can:
 
-* render a Step with nested StepCustomisations as a tree (rather than a single step)
-* each child node allows the user to add new steps at the `pre, post` or `steps` areas for that point in the tree. e.g. add a `pre/post/steps` step for `B, C or D`
+* render a Step with nested StepCustomisations as a tree (rather than a single step). e.g. adding `A` would render as:
+
+```yaml
+a:
+ b:
+  d:
+ c:
+```
+
+* each child `StepCustomization` node allows the user to add new steps at the `pre, post` or `steps` areas for that point in the tree. e.g. add a `pre/post/steps` step for `B, C or D`
 * the tree structure is essentially immutable; however if a user clicks on, say, B and does a Delete then it configures the `StepCustomisation` bean for `B` to disable all of its steps.
 
 ## Summary
