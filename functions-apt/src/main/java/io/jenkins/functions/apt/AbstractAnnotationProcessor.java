@@ -18,6 +18,8 @@ package io.jenkins.functions.apt;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
@@ -39,8 +41,21 @@ public abstract class AbstractAnnotationProcessor extends AbstractProcessor {
 
     protected static String javaTypeName(Element element) {
         TypeMirror typeMirror = element.asType();
+        if (typeMirror instanceof DeclaredType) {
+            DeclaredType declaredType = (DeclaredType) typeMirror;
+            return declaredType.asElement().toString();
+        }
         return typeMirror.toString();
     }
+
+    protected static TypeElement enclosingClass(final Element element) {
+          Element answer = element;
+          while (answer != null && !answer.getKind().isClass() && !answer.getKind().isInterface()) {
+              answer = answer.getEnclosingElement();
+          }
+          return (TypeElement) answer;
+      }
+
 
     protected void log(String message) {
         processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);

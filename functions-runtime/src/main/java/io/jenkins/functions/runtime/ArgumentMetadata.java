@@ -18,6 +18,7 @@ package io.jenkins.functions.runtime;
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.runtime.helpers.Strings;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
@@ -30,14 +31,17 @@ public class ArgumentMetadata {
     private final String description;
     private final Class<?> type;
     private final String typeName;
+    private final AnnotatedElement fieldOrParameter;
 
-    public ArgumentMetadata(String name, String displayName, String description, Class<?> type, String typeName) {
+    public ArgumentMetadata(String name, String displayName, String description, Class<?> type, String typeName, AnnotatedElement fieldOrParameter) {
         this.name = name;
         this.displayName = displayName;
         this.description = description;
         this.type = type;
         this.typeName = typeName;
+        this.fieldOrParameter = fieldOrParameter;
     }
+
 
     protected static ArgumentMetadata newInstance(Argument argument, AnnotatedElement fieldOrParameter, String defaultName, Class<?> clazz) {
         String name = "";
@@ -55,7 +59,7 @@ public class ArgumentMetadata {
             // TODO should we split camelCase?
             displayName = name;
         }
-        return new ArgumentMetadata(name, displayName, description, clazz, clazz.getName());
+        return new ArgumentMetadata(name, displayName, description, clazz, clazz.getName(), fieldOrParameter);
     }
 
     public static ArgumentMetadata newInstance(Field field) {
@@ -90,6 +94,16 @@ public class ArgumentMetadata {
             builder.append(name);
         }
         return builder.toString();
+    }
+
+    /**
+     * Returns an annotation on the argument's field, parameter or setter
+     */
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+        if (fieldOrParameter == null) {
+            return null;
+        }
+        return fieldOrParameter.getAnnotation(annotationClass);
     }
 
     public String getName() {

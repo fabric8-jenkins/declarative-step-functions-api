@@ -132,7 +132,7 @@ public class StepFunctions {
         try {
             method = clazz.getMethod(CALL_METHOD);
             Class<?> returnType = method.getReturnType();
-            ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader);
+            ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader, clazz);
             StepMetadata metadata = new StepMetadata(name, new StepProperties(classStepProperties, method), returnType, argumentMetadata, clazz);
             map.put(name, new CallableStepFunction(name, clazz, metadata, method));
         } catch (NoSuchMethodException e) {
@@ -149,14 +149,15 @@ public class StepFunctions {
                         String methodName = entry.getKey();
                         method = entry.getValue();
                         Class<?> returnType = method.getReturnType();
-                        ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(methodName, classLoader);
+                        ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(methodName, classLoader, clazz);
                         StepMetadata metadata = new StepMetadata(methodName, new StepProperties(classStepProperties, method), returnType, argumentMetadata, clazz);
                         map.put(methodName, new MethodStepFunction(name, clazz, metadata, method));
                     }
                 }
             } else {
                 Class<?> returnType = method.getReturnType();
-                ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader);
+                Class<?> argumentsClass = method.getParameterTypes()[0];
+                ArgumentMetadata[] argumentMetadata = loadArgumentMetadataFromProperties(name, classLoader, argumentsClass);
                 StepMetadata metadata = new StepMetadata(name, new StepProperties(classStepProperties, method), returnType, argumentMetadata, clazz);
                 map.put(name, new ArgumentsStepFunction(name, clazz, metadata, method));
             }
@@ -276,7 +277,7 @@ public class StepFunctions {
     }
 
 
-    protected static ArgumentMetadata[] loadArgumentMetadataFromProperties(String name, ClassLoader classLoader) {
+    protected static ArgumentMetadata[] loadArgumentMetadataFromProperties(String name, ClassLoader classLoader, Class<?> attributeClass) {
         Properties properties = new Properties();
         URL resource = classLoader.getResource("io/jenkins/functions/" + name + "-arguments.properties");
         if (resource != null) {
@@ -286,10 +287,10 @@ public class StepFunctions {
                throw new RuntimeException("Failed to load " + resource + " due to: " + e, e);
             }
         }
-        return loadArgumentMetadataFromProperties(name, properties, classLoader);
+        return loadArgumentMetadataFromProperties(name, properties, classLoader, attributeClass);
     }
 
-    protected static ArgumentMetadata[] loadArgumentMetadataFromProperties(String stepName, Properties properties, ClassLoader classLoader) {
+    protected static ArgumentMetadata[] loadArgumentMetadataFromProperties(String stepName, Properties properties, ClassLoader classLoader, Class<?> attributeClass) {
         SortedMap<String,ArgumentProperties> map = new TreeMap<>();
 
         Set<Map.Entry<Object, Object>> entries = properties.entrySet();
@@ -316,7 +317,7 @@ public class StepFunctions {
         }
         List<ArgumentMetadata> list = new ArrayList<>();
         for (Map.Entry<String, ArgumentProperties> entry : map.entrySet()) {
-            ArgumentMetadata metadata = entry.getValue().createAttributeMetadata(classLoader);
+            ArgumentMetadata metadata = entry.getValue().createAttributeMetadata(classLoader, attributeClass);
             if (metadata != null) {
                 list.add(metadata);
             }

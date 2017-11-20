@@ -16,10 +16,12 @@
  */
 package io.jenkins.functions.runtime.support;
 
-import io.jenkins.functions.Step;
 import io.jenkins.functions.runtime.ArgumentMetadata;
 import io.jenkins.functions.runtime.helpers.PrimitiveTypes;
 import io.jenkins.functions.runtime.helpers.Strings;
+
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 
 /**
  * A helper class for collecting the argument metadata from various places
@@ -36,7 +38,7 @@ public class ArgumentProperties {
         this.displayName = attributeName;
     }
 
-    public ArgumentMetadata createAttributeMetadata(ClassLoader classLoader) {
+    public ArgumentMetadata createAttributeMetadata(ClassLoader classLoader, Class<?> attributeClass) {
         if (Strings.isNullOrEmpty(typeName)) {
             return null;
         }
@@ -49,9 +51,25 @@ public class ArgumentProperties {
                 System.out.println("WARNING: failed to load " + className + " on ClassLoader " + classLoader);
             }
         }
-        return new ArgumentMetadata(attributeName, displayName, description, clazz, className);
+        AnnotatedElement fieldOrParameter = findField(attributeClass, attributeName);
+        return new ArgumentMetadata(attributeName, displayName, description, clazz, className, fieldOrParameter);
     }
 
+    private static AnnotatedElement findField(Class<?> type, String name) {
+        if (type != null) {
+            Field[] fields = type.getDeclaredFields();
+            for (Field field : fields) {
+                if (name.equals(field.getName())) {
+                    return field;
+                }
+            }
+            Class<?> superclass = type.getSuperclass();
+            if (superclass != null && !superclass.equals(Object.class)) {
+                return findField(superclass, name);
+            }
+        }
+        return null;
+    }
 
     public void setProperty(String stepName, String propertyName, String value) {
         switch (propertyName) {

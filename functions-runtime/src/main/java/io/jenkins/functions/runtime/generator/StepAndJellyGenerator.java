@@ -22,14 +22,18 @@ import io.jenkins.functions.runtime.StepFunctions;
 import io.jenkins.functions.runtime.StepMetadata;
 import io.jenkins.functions.runtime.helpers.Strings;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.jenkins.functions.runtime.helpers.Strings.capitalise;
@@ -111,6 +115,8 @@ public class StepAndJellyGenerator  {
                 "org.kohsuke.stapler.DataBoundSetter",
                 "java.util.Map");
 
+        StringBuffer constructorParamsWriter = new StringBuffer();
+        StringBuffer constructorBodyWriter = new StringBuffer();
         StringWriter attributesWriter = new StringWriter();
 
         if (argumentMetadata != null && argumentMetadata.length > 0) {
@@ -124,15 +130,28 @@ public class StepAndJellyGenerator  {
                 if (typeName.equals("boolean")) {
                     getPrefix = "is";
                 }
+
                 attributesWriter.write("    public " + typeName + " " + getPrefix + propertyName + "() {\n" +
                         "        return getArgument(\"" + argumentName + "\", " + Strings.removeGenericsFromClassName(typeName) + ".class);\n" +
                         "    }\n" +
-                        "\n" +
-                        "    @DataBoundSetter\n" +
-                        "    public void set" + propertyName + "(" + typeName + " value) {\n" +
-                        "        setArgument(\"" + argumentName + "\", value);\n" +
-                        "    }\n" +
-                        "\n\n");
+                        "\n");
+
+                if (isMandatory(argument)) {
+                    if (constructorParamsWriter.length() > 0) {
+                        constructorParamsWriter.append(", ");
+                    }
+                    constructorParamsWriter.append(typeName);
+                    constructorParamsWriter.append(" ");
+                    constructorParamsWriter.append(argumentName);
+
+                    constructorBodyWriter.append("        setArgument(\"" + argumentName + "\", " + argumentName + ");\n");
+                } else {
+                            attributesWriter.write("    @DataBoundSetter\n" +
+                            "    public void set" + propertyName + "(" + typeName + " value) {\n" +
+                            "        setArgument(\"" + argumentName + "\", value);\n" +
+                            "    }\n" +
+                            "\n\n");
+                }
             }
         }
 
@@ -164,11 +183,12 @@ public class StepAndJellyGenerator  {
                     "    public static final String STEP_DISPLAY_NAME = \"" + displayName + "\";\n" +
                     "\n" +
                     "    @DataBoundConstructor\n" +
-                    "    public " + stepClassName + "() {\n" +
-                    "        super(STEP_FUNCTION_NAME, " + implementationClass.getSimpleName() + ".class);\n" +
-                    "    }");
+                    "    public " + stepClassName + "(" + constructorParamsWriter.toString() + ") {\n" +
+                    "        super(STEP_FUNCTION_NAME, " + implementationClass.getSimpleName() + ".class);");
+            writer.print(constructorBodyWriter.toString());
+            writer.println("    }");
 
-            writer.print(attributesWriter.toString());
+            writer.println(attributesWriter.toString());
 
             writer.println("\n" +
                     "    @Override\n" +
@@ -192,10 +212,14 @@ public class StepAndJellyGenerator  {
         }
     }
 
+    protected boolean isMandatory(ArgumentMetadata argument) {
+        return argument.getAnnotation(NotNull.class) != null || argument.getAnnotation(NotEmpty.class) != null;
+    }
+
     private void generateJelly(File file, StepFunction function) throws IOException {
         StepMetadata metadata = function.getMetadata();
-        ArgumentMetadata[] argumentMetadata = metadata.getArgumentMetadata();
-        if (argumentMetadata != null && argumentMetadata.length > 0) {
+        List<ArgumentMetadata> sortedArguments = getSortedArguments(metadata);
+        if (!sortedArguments.isEmpty()) {
             file.getParentFile().mkdirs();
             try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
                 writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -209,8 +233,8 @@ public class StepAndJellyGenerator  {
                 } catch (Exception e) {
                     defaultValues = initialArguments;
                 }
-                
-                for (ArgumentMetadata argMetadata : argumentMetadata) {
+
+                for (ArgumentMetadata argMetadata : sortedArguments) {
                     String name = argMetadata.getName();
                     String defaultExpression = "";
                     Object defaultValue = defaultValues.get(name);
@@ -247,6 +271,23 @@ public class StepAndJellyGenerator  {
                 writer.println("</j:jelly>");
             }
         }
+    }
+
+    private List<ArgumentMetadata> getSortedArguments(StepMetadata stepMetadata) {
+        List<ArgumentMetadata> answer = new ArrayList<>();
+        List<ArgumentMetadata> optional = new ArrayList<>();
+        ArgumentMetadata[] argumentMetadata = stepMetadata.getArgumentMetadata();
+        if (argumentMetadata != null && argumentMetadata.length > 0) {
+            for (ArgumentMetadata metadata : argumentMetadata) {
+                if (isMandatory(metadata)) {
+                    answer.add(metadata);
+                } else {
+                    optional.add(metadata);
+                }
+            }
+        }
+        answer.addAll(optional);
+        return answer;
     }
 }
 
