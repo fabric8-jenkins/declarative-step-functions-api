@@ -2,7 +2,10 @@
 
 This library provides a simple way to generate Declarative Pipeline Steps using Java POJOs without users needing to know anything about Jenkins, Pipelines or Jelly.
 
-To use it just create a Java POJO and a function which are both annotated with `@Step` like this:
+To use it just create a Java POJO annotating the class and a method with `@Step`. A few different approaches are supported:
+
+### implement java.util.function.Function
+
  ```java
 import io.jenkins.functions.Argument;
 import io.jenkins.functions.Step;
@@ -46,6 +49,8 @@ public class ExampleFunction implements Function<ExampleFunction.Context, Result
 }
 ```
 
+### implement java.util.concurrent.Callable
+
 Or you can injection of the arguments onto the class and use a `Callable`:
 
 
@@ -74,6 +79,8 @@ public class HelloFunction implements Callable<String> {
     }
 }
 ```
+
+### annotate a method with arguments
 
 Or you can just annotation a class with `@Step` and then annotate each method with `@Step` and each parameter with `@Argument` and a name:
 
