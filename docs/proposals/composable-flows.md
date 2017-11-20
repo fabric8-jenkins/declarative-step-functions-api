@@ -95,7 +95,7 @@ Then the `StepCustomization` for `B and C` can be configured in the usual declar
 
 Then the Blue Ocean Pipeline Editor could visualse B and C in the pipeline tree below A so that a user can click on B and add pre/post steps or replacement steps or disable it.
 
-This could then generate a declarative pipeline something like:
+This could then generate a declarative pipeline something like the following (assuming that the user wishes to configure/customise `B, C and D` - in practice they only may need to configure one of those):
 ```groovy
 pipeline {
   agent any
