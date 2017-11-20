@@ -56,8 +56,7 @@ public class ArgumentMetadata {
             name = defaultName;
         }
         if (Strings.isNullOrEmpty(displayName)) {
-            // TODO should we split camelCase?
-            displayName = name;
+            displayName = Strings.humanize(name);
         }
         return new ArgumentMetadata(name, displayName, description, clazz, clazz.getName(), fieldOrParameter);
     }

@@ -35,7 +35,7 @@ public class ArgumentProperties {
 
     public ArgumentProperties(String attributeName) {
         this.attributeName = attributeName;
-        this.displayName = attributeName;
+        this.displayName = Strings.humanize(attributeName);
     }
 
     public ArgumentMetadata createAttributeMetadata(ClassLoader classLoader, Class<?> attributeClass) {

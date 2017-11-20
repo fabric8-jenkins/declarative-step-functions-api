@@ -49,4 +49,31 @@ public final class Strings {
         }
         return typeName;
     }
+
+    /**
+     * Splits a CamelCase string using a space between them.
+     */
+    public static String splitCamelCase(String text) {
+        return splitCamelCase(text, " ");
+    }
+
+    /**
+     * Splits a CamelCase string using a separator string between them.
+     */
+    public static String splitCamelCase(String text, String separator) {
+        StringBuilder buffer = new StringBuilder();
+        char last = 'A';
+        for (char c : text.toCharArray()) {
+            if (Character.isLowerCase(last) && Character.isUpperCase(c)) {
+                buffer.append(separator);
+            }
+            buffer.append(c);
+            last = c;
+        }
+        return buffer.toString();
+    }
+
+    public static String humanize(String name) {
+        return capitalise(splitCamelCase(name));
+    }
 }
