@@ -76,4 +76,19 @@ public final class Strings {
     public static String humanize(String name) {
         return capitalise(splitCamelCase(name));
     }
+
+    public static String stripPrefix(String value, String suffix) {
+        if (!value.startsWith(suffix)) {
+            return value;
+        } else {
+            return value.substring(suffix.length());
+        }
+    }
+    public static String stripSuffix(String value, String suffix) {
+        if (!value.endsWith(suffix)) {
+            return value;
+        } else {
+            return value.substring(0, value.length() - suffix.length());
+        }
+    }
 }
