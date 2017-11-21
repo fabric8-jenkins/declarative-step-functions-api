@@ -31,10 +31,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static io.jenkins.functions.runtime.helpers.Strings.capitalise;
 import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
@@ -43,8 +46,15 @@ import static io.jenkins.functions.runtime.helpers.Strings.notEmpty;
  * A generator of Step classes and Jelly code for step functions
  */
 public class StepAndJellyGenerator  {
+    protected static final Set<String> numberClassNames = new TreeSet<>(Arrays.asList(
+            "byte", "short", "int", "long", "float", "double",
+            "java.lang.Byte", "java.lang.Short", "java.lang.Int", "java.lang.Long", "java.lang.Float", "java.lang.Double",
+            "java.math.BigDecimal", "java.math.BigInteger"
+    ));
+
     private File outputDir = new File(".");
     private File jellyOutputDir = new File(".");
+
 
     public StepAndJellyGenerator() {
     }
@@ -238,18 +248,32 @@ public class StepAndJellyGenerator  {
                     String name = argMetadata.getName();
                     String defaultExpression = "";
                     Object defaultValue = defaultValues.get(name);
-                    if (defaultValue != null) {
+                    if (defaultValue != null && !"".equals(defaultValue)) {
                         // TODO can we refer to the default value rather than hard code it in the Jelly?
                         defaultExpression = " default=\"" + defaultValue + "\"";
                     }
 
+                    String typeName = argMetadata.getTypeName();
                     String displayName = argMetadata.getDisplayName();
                     if (Strings.isNullOrEmpty(displayName)) {
-                        displayName = name;
+                        displayName = Strings.humanize(name);
+                    }
+                    List<String> clazzes = new ArrayList<>();
+                    if (isMandatory(argMetadata)) {
+                        clazzes.add("required");
+                    }
+                    if (notEmpty(typeName)) {
+                        if (isNumber(typeName)) {
+                            clazzes.add("number");
+                        }
+                        // TODO detect other kinds of type like URL / date?
+                    }
+                    String clazz = "";
+                    if (clazzes.size() > 0) {
+                        clazz = " clazz=\"" + String.join(" ", clazzes) + "\"";
                     }
                     // generate different widgets based on types and annotations / metadata
-                    String widget = "<f:textbox" + defaultExpression + "/>";
-                    String typeName = argMetadata.getTypeName();
+                    String widget = "<f:textbox" + defaultExpression + clazz + "/>";
                     if (Strings.notEmpty(typeName)) {
                         String shortTypeName = Strings.removeGenericsFromClassName(typeName);
                         if (shortTypeName.equals("boolean") || shortTypeName.equals("java.lang.Boolean")) {
@@ -271,6 +295,10 @@ public class StepAndJellyGenerator  {
                 writer.println("</j:jelly>");
             }
         }
+    }
+
+    protected boolean isNumber(String typeName) {
+        return numberClassNames.contains(typeName);
     }
 
     private List<ArgumentMetadata> getSortedArguments(StepMetadata stepMetadata) {
